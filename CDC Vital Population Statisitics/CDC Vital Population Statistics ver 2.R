@@ -19,13 +19,18 @@
 # ...and pop total for final join
 
 
+
 ########## Change Log ###########
+# install tibble package to insert row at a set place
+# install.packages("tibble")
+
 
 # Import necessary packages
 library("dplyr") # Data Manipulation 
 library("stringr") # R String Manipulation Package
 library("tidyr") # for pivot longer function
 library("rio") # input output library
+library("tibble") # insert columns at set places
 cdc_pop <- import("C:/Users/Reagan/Documents/ISLG/CDC Vital Population Statisitics/pcen_v2020_y1020.sas7bdat")
 
 
@@ -281,34 +286,89 @@ adult_total_pop_17 <- filter(cdc_pop, age >= 17)
 # pivot and aggregate total population
 
 adult_total_pop <- aggregate_and_pivot(adult_total_pop, "pop_adult_any_ethnicity")
-adult_total_pop_17 <- aggregate_and_pivot(adult_total_pop_17, "pop_total_any_ethnicity")
+adult_total_pop_17 <- aggregate_and_pivot(adult_total_pop_17, "pop_total_any_ethnicity_17")
 total_pop <- aggregate_and_pivot(cdc_pop, "pop_total_any_ethnicity")
 
 # Make a list of all populations
-pop_list <- list(total_pop, adult_total_pop, adult_total_pop_17, pop_hisp, adult_hispanic,
-                 adult_hispanic_17, pop_black, adult_black, adult_male_black, adult_female_black, 
-                 pop_black_nh, adult_black_nh, adult_male_black_nh, adult_female_black_nh, 
-                 adult_black_17, adult_black_17_nh, pop_white, adult_white, adult_male_white, 
-                 adult_female_white, pop_white_nh, adult_white_nh, adult_male_white_nh,
-                 adult_female_white_nh, adult_white_17, adult_asian_17_nh, pop_native_american,
-                 adult_native_american, adult_male_native_american, adult_female_native_american,
-                 pop_native_american_nh, adult_native_american_17_nh, adult_male_native_american_nh,
-                 adult_female_native_american_nh, adult_native_american_17, adult_native_american_17_nh,
-                 pop_asian, adult_asian, adult_male_asian, adult_female_asian, pop_asian_nh,
-                 adult_asian_nh, adult_male_asian_nh, adult_female_asian_nh, adult_asian_17,
-                 adult_asian_17_nh)
+pop_list <- list(
+                # Total populations
+                 total_pop, adult_total_pop, adult_total_pop_17, 
+                # Hispanic populations
+                 pop_hisp, adult_hispanic, adult_hispanic_17, 
+                # Black total and adults
+                 pop_black, adult_black, adult_male_black, adult_female_black,
+                # Black non hispanic totals and adults
+                 pop_black_nh, adult_black_nh, adult_male_black_nh, adult_female_black_nh,
+                # Black 17
+                 adult_black_17, adult_black_17_nh, 
+                # White totals and adults
+                 pop_white, adult_white, adult_male_white, adult_female_white, 
+                # White non hispanic and adults
+                 pop_white_nh, adult_white_nh, adult_male_white_nh, adult_female_white_nh, 
+                # adult white 17
+                 adult_white_17, adult_white_17_nh, 
+                # Native American totals and adults 
+                 pop_native_american, adult_native_american, adult_male_native_american, adult_female_native_american,
+                # Native American non hispanic and adults
+                 pop_native_american_nh, adult_native_american_nh, adult_male_native_american_nh, adult_female_native_american_nh, 
+                # Native American 17
+                adult_native_american_17, adult_native_american_17_nh,
+                # Asian totals and adults
+                 pop_asian, adult_asian, adult_male_asian, adult_female_asian, 
+                # Asian non hispanic and adults
+                 pop_asian_nh, adult_asian_nh, adult_male_asian_nh, adult_female_asian_nh,
+                # Asian 17
+                adult_asian_17, adult_asian_17_nh)
 
+# Join all datasets into one dataframe using merge on fips_county_code_year and for loop
+# initalize total_pop as first dataset. 
 df_pop <- total_pop
+for (i in 2:length(pop_list)) {
+  df_pop <- merge(df_pop, pop_list[i], by = "fips_state_county_code_year")
+}
 
-for (i in range(2:length(pop_list))) {
-  
-  df_pop <- left_join(df_pop, pop_list[i], by = "fips_state_county_code_year",
-                      copy = TRUE)
+# add site_name column in second place using tibble library
+df_pop <- add_column(df_pop, site_name = NA, .after = "fips_state_county_code_year")
+# add fips_state_county_code column after fips_state_county_code_year column using tibble library
+df_pop <- add_column(df_pop, fips_state_county_code = substr(df_pop$fips_state_county_code_year, 1, 5),
+                     .after = "fips_state_county_code_year")
+# add year column after fips_state_country_code using tibble library
+df_pop <- add_column(df_pop, year = substr(df_pop$fips_state_county_code_year, 7, 10),
+                     .after = "fips_state_county_code")
+# Change year to an integer
+df_pop$year <- as.integer(df_pop$year)
+# drop fips_state_county_code_year column
+df_pop <- select(df_pop, -fips_state_county_code_year)
+
+# Create site names dictionary to marry site names and with state and county codes
+site_names_dict <- c("Ada"="16001", "Shelby"="47157", "Pennington"="46103", "Missoula"="30063",
+               "Minnehaha"="46099", "Pima"="04019", "Charleston"="45019", 
+               # Kings County
+               "New York City"="36047",
+               # New York County
+               "New York City"="36061",
+               # Bronx County
+               "New York City"="36005",
+               # Richmond County
+               "New York City"="36085",
+               # Queens County
+               "New York City"="36081", "Mecklenburg"="37119", "Los Angeles"="06037",
+               "Allegheny"="42003", "Harris"="48201", "Clark"="32003",
+               "Multnomah"="41051", "Spokane"="53063", "New Orleans"="22071",
+               "Buncombe"="37021", "Cook"="17031", "East Baton Rouge"="22033",
+               "Lake"="17097", "Lucas"="39095", "Milwaukee"="55079",
+               "Missoula"="30063", "Palm Beach"="12099", "Philadelphia"="42101",
+               "San Francisco"="06075", "St. Louis"="29189")
+
+
+
+for (i in seq(1, length(site_names_dict))) {
+  insert_rows <- df_pop$fips_state_county_code == site_names_dict[i]
+  df_pop[insert_rows, "site_name"] <- names(site_names_dict[i])
 }
 
 
-df_pop <- left_join(df_pop, pop_list[2], by = "fips_state_county_code_year")
+View(df_pop)
 
 
-pop_list[2]
 .rs.restartR()
