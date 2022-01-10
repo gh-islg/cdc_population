@@ -18,6 +18,7 @@
 # add global variables for filtering function calls
 # export two sets of files ones with sites and without (csv and excel format)
 # change wd for upload to public or research drives
+# take male and female populations out of the final output
 
 ##################################
 
@@ -332,17 +333,17 @@ total_pop <- aggregate_and_pivot(cdc_pop, "pop_total_any_ethnicity")
 # Make a list of all populations
 pop_list <- list(total_pop, adult_total_pop, adult_total_pop_17, # Total populations
                  pop_hisp, adult_hispanic, adult_hispanic_17, # Hispanic populations
-                 pop_black, adult_black, adult_male_black, adult_female_black, # Black total and adults
-                 pop_black_nh, adult_black_nh, adult_male_black_nh, adult_female_black_nh, # Black non Hispanic totals and adults
+                 pop_black, adult_black, # Black total and adults
+                 pop_black_nh, adult_black_nh, # Black non Hispanic totals and adults
                  adult_black_17, adult_black_17_nh, # Black 17
-                 pop_white, adult_white, adult_male_white, adult_female_white, # White totals and adults
-                 pop_white_nh, adult_white_nh, adult_male_white_nh, adult_female_white_nh, # White non Hispanic and adults
+                 pop_white, adult_white, # White totals and adults
+                 pop_white_nh, adult_white_nh, # White non Hispanic and adults
                  adult_white_17, adult_white_17_nh, # adult white 17
-                 pop_native_american, adult_native_american, adult_male_native_american, adult_female_native_american, # Native American totals and adults
-                 pop_native_american_nh, adult_native_american_nh, adult_male_native_american_nh, adult_female_native_american_nh, # Native American non Hispanic and adults
+                 pop_native_american, adult_native_american, # Native American totals and adults
+                 pop_native_american_nh, adult_native_american_nh, # Native American non Hispanic and adults
                  adult_native_american_17, adult_native_american_17_nh, # Native American 17
-                 pop_asian, adult_asian, adult_male_asian, adult_female_asian, # Asian totals and adults
-                 pop_asian_nh, adult_asian_nh, adult_male_asian_nh, adult_female_asian_nh, # Asian non Hispanic and adults
+                 pop_asian, adult_asian, # Asian totals and adults
+                 pop_asian_nh, adult_asian_nh, # Asian non Hispanic and adults
                  adult_asian_17, adult_asian_17_nh) # Asian 17
 
 # Join all datasets into one dataframe using merge on fips_county_code_year and for loop
