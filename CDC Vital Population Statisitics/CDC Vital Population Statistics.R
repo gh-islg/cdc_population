@@ -22,16 +22,16 @@
 
 ##################################
 
-
 # Import necessary packages
 library("dplyr") # Data Manipulation 
 library("stringr") # R String Manipulation Package
 library("tidyr") # for pivot longer function
 library("rio") # input output library
 library("tibble") # insert columns at set places
+library("writexl") # write excel files
 
 # import data using rio package
-cdc_pop <- import("C:/Users/Reagan/Documents/ISLG/CDC Vital Population Statisitics/pcen_v2020_y1020.sas7bdat")
+cdc_pop <- import("R:/SJC/Site information/CDC Population & UCR Data/2020-2010/CDC/Resources/pcen_v2020_y1020.sas7bdat")
 
 colnames(cdc_pop) <- tolower(colnames(cdc_pop))
 
@@ -393,18 +393,26 @@ for (i in seq(1, length(site_names_dict))) {
 missing_site_rows <- which(is.na(df_pop$site_name))
 sjc_site_populations <- df_pop[-missing_site_rows, ]
 
-# export datasets as csv and excel using export from rio package
-
-#set the working directory
-setwd("C:/Users/Reagan/Documents/ISLG/CDC Vital Population Statisitics")
-
+# export datasets as csv and excel to the R Drive
 # csv
-export(df_pop, "cdc_populations_2010_2020.csv")
-export(sjc_site_populations, "sjc_site_populations_2010_2020.csv")
+write.csv(df_pop, "R:/SJC/Site information/CDC Population & UCR Data/2020-2010/CDC/R/Output/cdc_populations_2010_2020.csv", row.names = FALSE)
+write.csv(sjc_site_populations, "R:/SJC/Site information/CDC Population & UCR Data/2020-2010/CDC/R/Output/sjc_site_populations_2010_2020.csv", row.names = FALSE)
 
 # excel
-export(df_pop, "cdc_populations_2010_2020.xlsx")
-export(sjc_site_populations, "sjc_site_populations_2010_2020.xlsx")
+write_xlsx(df_pop, "R:/SJC/Site information/CDC Population & UCR Data/2020-2010/CDC/R/Output/cdc_populations_2010_2020.xlsx")
+write_xlsx(sjc_site_populations, "R:/SJC/Site information/CDC Population & UCR Data/2020-2010/CDC/R/Output/sjc_site_populations_2010_2020.xlsx")
+
+
+# export datasets as csv and excel using export from rio package
+# save files in the P-Drive
+# csv
+write.csv(df_pop, "P:/SJC/03. Data and PM Management/CDC Population Data/2020-2010/cdc_populations_2010_2020.csv", row.names =  FALSE)
+write.csv(sjc_site_populations, "P:/SJC/03. Data and PM Management/CDC Population Data/2020-2010/sjc_site_populations_2010_2020.csv", row.names = FALSE)
+
+# excel
+write_xlsx(df_pop, "P:/SJC/03. Data and PM Management/CDC Population Data/2020-2010/cdc_populations_2010_2020.xlsx")
+write_xlsx(sjc_site_populations, "P:/SJC/03. Data and PM Management/CDC Population Data/2020-2010/sjc_site_populations_2010_2020.xlsx")
+
 
 
 
