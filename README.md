@@ -13,11 +13,7 @@ __Adult Hispanic Population Any Race 17+__<br/><br/>
 For each race including (Black, White, Native American/Alaskan Native, and Asian/Pacific Islander) :<br/>
 __Total Population__<br/>
 __Adult Population Any Ethnicity +18__<br/>
-__Adult Male Population Any Ethnicity +18__<br/>
-__Adult Female Population Any Ethnicity +18__<br/>
 __Total Population Non-Hispanic__<br/>
 __Adult Population Non-Hispanic +18__<br/>
-__Adult Male Population Non-Hispanic +18__<br/>
-__Adult Female Population Non-Hispanic +18__<br/>
 __Adult Population Any Ethnicity +17__<br/>
 __Adult Population Non-Hispanic +17__
