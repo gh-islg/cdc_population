@@ -17,3 +17,9 @@ __Total Population Non-Hispanic__<br/>
 __Adult Population Non-Hispanic +18__<br/>
 __Adult Population Any Ethnicity +17__<br/>
 __Adult Population Non-Hispanic +17__
+
+The files can be accessed via the R and P drives as well:<br/>
+R Drive:<br/>
+R:/SJC/Site information/CDC Population & UCR Data/2020-2010/CDC/R/Output/<br/><br/>
+P Drive:<br/>
+P:/SJC/03. Data and PM Management/CDC Population Data/2020-2010/
