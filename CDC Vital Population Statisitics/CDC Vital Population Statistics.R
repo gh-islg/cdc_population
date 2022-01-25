@@ -192,6 +192,8 @@ aggregate_and_pivot <- function(df, values_name) {
   
   # take fips_state_country_code and year out of columns only keep combined column for left join
   df <- select(df, fips_state_county_code_year, values_name)
+  
+  return(df)
 }
 
 
