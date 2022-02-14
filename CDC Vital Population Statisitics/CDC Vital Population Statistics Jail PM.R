@@ -403,12 +403,12 @@ sjc_site_populations <- df_pop[-missing_site_rows, ]
 # export datasets as csv and excel using export from rio package
 
 # csv
-export(df_pop, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
-export(sjc_site_populations, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/sjc_site_populations_jail_pm_2010_2020.csv")
+export(df_pop, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
+export(sjc_site_populations, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/sjc_site_populations_jail_pm_2010_2020.csv")
 
 # excel
-export(df_pop, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
-export(sjc_site_populations, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
+export(df_pop, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.xlsx")
+export(sjc_site_populations, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/sjc_site_populations_jail_pm_2010_2020.xlsx")
 
 
 
