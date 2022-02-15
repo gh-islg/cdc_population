@@ -147,6 +147,12 @@ asian_male_filter <- 7
 asian_female_filter <- 8
 asian_any_gender_filter <- c(7,8)
 
+# Combinations
+all_males <- c(1, 3, 5, 7)
+all_female <- c(2, 4, 6, 8)
+poc <- c(3, 4, 5, 6, 7, 8)
+poc_males <- c(3, 5, 7)
+poc_females <- c(4, 6, 8)
 
 filter_aggregate_and_pivot <- function(df, age_filter, hisp_filter, racesex_filter, values_name, age_groups) {
   
@@ -200,12 +206,12 @@ filter_aggregate_and_pivot_age_groups <- function(df, hisp_filter, racesex_filte
     high <- young_high
   }
   
-  else if (age_group == "middle") { # middle age
+  if (age_group == "middle") { # middle age
     low <- middle_low
-    middle <- middle_low
+    high <- middle_high
   }
   
-  else { # old age
+  if (age_group == "older") { # old age
     low <- older_low
     high <- older_high
   }
@@ -281,11 +287,11 @@ adult_black <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non_and_his
                                           black_any_gender_filter, "pop_adult_black_any_ethnicity")
 pop_black <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_and_hispanic_filter, 
                                         black_any_gender_filter, "pop_total_black_any_ethnicity")
-adult_black_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+black_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                             black_any_gender_filter, "young", "pop_black_young_any_ethnicity")
-adult_black_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+black_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                 black_any_gender_filter, "middle", "pop_black_middle_any_ethnicity")
-adult_black_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+black_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                  black_any_gender_filter, "older", "pop_black_older_any_ethnicity")
 
 #### Black non hispanic ####
@@ -297,11 +303,11 @@ adult_black_nh <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non_hisp
                                              black_any_gender_filter, "pop_adult_black_non_hispanic")
 pop_black_nh <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_hispanic_filter, 
                                            black_any_gender_filter, "pop_total_black_non_hispanic")
-adult_black_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+black_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                            black_any_gender_filter, "young", "pop_black_young_non_hispanic")
-adult_black_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+black_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                             black_any_gender_filter, "middle", "pop_black_middle_non_hispanic")
-adult_black_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+black_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                            black_any_gender_filter, "older", "pop_black_older_non_hispanic")
 
 
@@ -332,11 +338,11 @@ adult_white <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non_and_his
                                           white_any_gender_filter, "pop_adult_white_any_ethnicity")
 pop_white <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_and_hispanic_filter, 
                                         white_any_gender_filter, "pop_total_white_any_ethnicity")
-adult_white_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+white_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                 white_any_gender_filter, "young", "pop_white_young_any_ethnicity")
-adult_white_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+white_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                  white_any_gender_filter, "middle", "pop_white_middle_any_ethnicity")
-adult_white_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+white_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                 white_any_gender_filter, "older", "pop_white_older_any_ethnicity")
 
 #### white non hispanic ####
@@ -348,11 +354,11 @@ adult_white_nh <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non_hisp
                                              white_any_gender_filter, "pop_adult_white_non_hispanic")
 pop_white_nh <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_hispanic_filter, 
                                            white_any_gender_filter, "pop_total_white_non_hispanic")
-adult_white_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+white_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                            white_any_gender_filter, "young", "pop_white_young_non_hispanic")
-adult_white_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+white_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                             white_any_gender_filter, "middle", "pop_white_middle_non_hispanic")
-adult_white_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+white_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                            white_any_gender_filter, "older", "pop_white_older_non_hispanic")
 
 #### White +17 population ####
@@ -381,11 +387,11 @@ adult_native_american <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, n
                                                     native_american_any_gender_filter, "pop_adult_AIAN_any_ethnicity")
 pop_native_american <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_and_hispanic_filter, 
                                                   native_american_any_gender_filter, "pop_total_AIAN_any_ethnicity")
-adult_native_american_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+native_american_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                 native_american_any_gender_filter, "young", "pop_AIAN_young_any_ethnicity")
-adult_native_american_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+native_american_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                  native_american_any_gender_filter, "middle", "pop_AIAN_middle_any_ethnicity")
-adult_native_american_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+native_american_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                 native_american_any_gender_filter, "older", "pop_AIAN_older_any_ethnicity")
 
 #### Native American Alaska Native non hispanic ####
@@ -397,11 +403,11 @@ adult_native_american_nh <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter
                                                        native_american_any_gender_filter, "pop_adult_AIAN_non_hispanic")
 pop_native_american_nh <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_hispanic_filter, 
                                                      native_american_any_gender_filter, "pop_total_AIAN_non_hispanic")
-adult_native_american_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+native_american_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                                      native_american_any_gender_filter, "young", "pop_AIAN_young_non_hispanic")
-adult_native_american_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+native_american_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                                       native_american_any_gender_filter, "middle", "pop_AIAN_middle_non_hispanic")
-adult_native_american_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+native_american_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                                      native_american_any_gender_filter, "older", "pop_AIAN_older_non_hispanic")
 
 #### Native American Alaska Native +17 population ####
@@ -429,11 +435,11 @@ adult_asian <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non_and_his
                                           asian_any_gender_filter, "pop_adult_API_any_ethnicity")
 pop_asian <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_and_hispanic_filter, 
                                         asian_any_gender_filter, "pop_total_API_any_ethnicity")
-adult_asian_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+asian_young <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                      asian_any_gender_filter, "young", "pop_API_young_any_ethnicity")
-adult_asian_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+asian_middle <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                       asian_any_gender_filter, "middle", "pop_API_middle_any_ethnicity")
-adult_asian_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
+asian_older <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_and_hispanic_filter,
                                                                      asian_any_gender_filter, "older", "pop_API_older_any_ethnicity")
 
 #### asian pacific islander non hispanic ####
@@ -445,11 +451,11 @@ adult_asian_nh <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non_hisp
                                              asian_any_gender_filter, "pop_adult_API_non_hispanic")
 pop_asian_nh <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_hispanic_filter, 
                                            asian_any_gender_filter, "pop_total_API_non_hispanic")
-adult_asian_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+asian_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                            asian_any_gender_filter, "young", "pop_API_young_any_ethnicity")
-adult_asian_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+asian_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                             asian_any_gender_filter, "middle", "pop_API_middle_any_ethnicity")
-adult_asian_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
+asian_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
                                                            asian_any_gender_filter, "older", "pop_API_older_any_ethnicity")
 
 #### asian pacific islander +17 population ####
@@ -461,54 +467,109 @@ adult_male_asian_17 <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non
                                                asian_male_filter, "pop_adult_male_API_17_any_ethnicity")
 adult_female_asian_17 <- filter_aggregate_and_pivot(cdc_pop, adult_age_17_filter, non_and_hispanic_filter, 
                                                  asian_female_filter, "pop_adult_female_API_17_any_ethnicity")
-adult_male_asian_nh_17 <- filter_aggregate_and_pivot(cdc_pop, adult_age_17_filter, non_hispanic_filter, 
+adult_male_asian_17_nh <- filter_aggregate_and_pivot(cdc_pop, adult_age_17_filter, non_hispanic_filter, 
                                                   asian_male_filter, "pop_adult_male_API_non_hispanic")
-adult_female_asian_nh_17 <- filter_aggregate_and_pivot(cdc_pop, adult_age_17_filter, non_hispanic_filter, 
+adult_female_asian_17_nh <- filter_aggregate_and_pivot(cdc_pop, adult_age_17_filter, non_hispanic_filter, 
                                                     asian_female_filter, "pop_adult_female_API_non_hispanic")
 
 ############# Hispanic population ###############
-adult_hispanic <- filter(cdc_pop, age >= adult_age_filter, hisp == hispanic_filter)
 pop_hisp <-filter(cdc_pop, hisp == hispanic_filter)
+adult_hispanic <- filter(cdc_pop, age >= adult_age_filter, hisp == hispanic_filter)
+adult_male_hispanic <- filter(cdc_pop, age >= adult_age_filter, hisp == hispanic_filter, racesex %in% all_males)
+adult_female_hispanic <- filter(cdc_pop, age >= adult_age_filter, hisp == hispanic_filter, racesex %in% all_female)
+############ Hispanic 17+ population ###############
 adult_hispanic_17 <- filter(cdc_pop, age >= adult_age_17_filter, hisp == hispanic_filter)
-adult_hispanic_young <- filter(cdc_pop, age >= young_low & age <= young_high, hisp == hispanic_filter)
-adult_hispanic_middle <- filter(cdc_pop, age >= middle_low & age <= middle_low, hisp == hispanic_filter)
-adult_hispanic_older <- filter(cdc_pop, age >= young_low & age <= young_high, hisp == hispanic_filter)
+adult_male_hispanic_17 <- filter(cdc_pop, age >= adult_age_17_filter, hisp == hispanic_filter, racesex %in% all_males)
+adult_female_hispanic_17 <- filter(cdc_pop, age >= adult_age_17_filter, hisp == hispanic_filter, racesex %in% all_female)
+########### Hispanic Age Groups ##################
+hispanic_young <- filter(cdc_pop, age >= young_low & age <= young_high, hisp == hispanic_filter)
+hispanic_middle <- filter(cdc_pop, age >= middle_low & age <= middle_high, hisp == hispanic_filter)
+hispanic_older <- filter(cdc_pop, age >= older_low & age <= older_high, hisp == hispanic_filter)
 
 # pivot and aggregate hispanic
 adult_hispanic <- aggregate_and_pivot(adult_hispanic, "pop_adult_hispanic_any_race")
 pop_hisp <- aggregate_and_pivot(pop_hisp, "pop_total_hispanic_any_race")
+adult_male_hispanic <- aggregate_and_pivot(adult_male_hispanic, "pop_adult_male_hispanic_any_race")
+adult_female_hispanic <- aggregate_and_pivot(adult_female_hispanic, "pop_adult_female_hispanic_any_race")
 adult_hispanic_17 <- aggregate_and_pivot(adult_hispanic_17, "pop_adult_hispanic_17_any_race")
+adult_male_hispanic_17 <- aggregate_and_pivot(adult_male_hispanic_17, "pop_adult_male_hispanic_17_any_race")
+adult_female_hispanic_17 <- aggregate_and_pivot(adult_female_hispanic_17, "pop_adult_female_hispanic_17_any_race")
+hispanic_young <- aggregate_and_pivot(hispanic_young, "pop_hispanic_young_any_race")
+hispanic_middle <- aggregate_and_pivot(hispanic_middle, "pop_hispanic_middle_any_race")
+hispanic_older <- aggregate_and_pivot(hispanic_older, "pop_hispanic_older_any_race")
+
+########## POC Population ##################
+total_poc <- filter(cdc_pop, racesex %in% poc)
+adult_total_poc <- filter(cdc_pop, age >= adult_age_filter, racesex %in% poc)
+adult_male_poc <- filter(cdc_pop, age >= adult_age_filter, racesex %in% poc_males)
+adult_female_poc <- filter(cdc_pop, age >= adult_age_filter, racesex %in% poc_females)
+########## POC Population 17+ ###############
+adult_total_poc_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% poc)
+adult_male_poc_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% poc_males)
+adult_female_poc_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% poc_females)
+######### POC Population Age Groups ##########
+total_poc_young <- filter(cdc_pop, age >= young_low & age <= young_high, racesex %in% poc)
+total_poc_middle <- filter(cdc_pop, age >= middle_low & age <= middle_high, racesex %in% poc)
+total_poc_older <- filter(cdc_pop, age >= older_low & age <= older_high, racesex %in% poc)
+
+# pivot and aggregate POC
+total_poc <- aggregate_and_pivot(total_poc, "total_pop_poc")
+adult_total_poc <- aggregate_and_pivot(adult_total_poc, "total_adult_poc")
+adult_male_poc <- aggregate_and_pivot(adult_male_poc, "total_adult_male_poc")
+adult_female_poc <- aggregate_and_pivot(adult_female_poc, "total_adult_female_poc")
+adult_total_poc_17 <- aggregate_and_pivot(adult_total_poc_17, "total_adult_poc_17")
+adult_male_poc_17 <- aggregate_and_pivot(adult_male_poc_17, "total_adult_male_poc_17")
+adult_female_poc_17 <- aggregate_and_pivot(adult_female_poc_17, "total_adult_female_poc_17")
+total_poc_young <- aggregate_and_pivot(total_poc_young, "total_poc_young")
+total_poc_middle <- aggregate_and_pivot(total_poc_middle, "total_poc_middle")
+total_poc_older <- aggregate_and_pivot(total_poc_older, "total_poc_older")
 
 ########## Total Population ##################
 adult_total_pop <- filter(cdc_pop, age >= adult_age_filter)
+adult_male_total <- filter(cdc_pop, age >= adult_age_filter, racesex %in% all_males)
+adult_female_total <- filter(cdc_pop, age >= adult_age_filter, racesex %in% all_female)
+########## Total Population 17+ ###############
 adult_total_pop_17 <- filter(cdc_pop, age >= adult_age_17_filter)
+adult_male_total_pop_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% all_males)
+adult_female_total_pop_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% all_female)
+######### Total Population Age Groups ##########
+total_pop_young <- filter(cdc_pop, age >= young_low & age <= young_high)
+total_pop_middle <- filter(cdc_pop, age >= middle_low & age <= middle_high)
+total_pop_older <- filter(cdc_pop, age >= older_low & age <= older_high)
 
 # pivot and aggregate total population
-adult_total_pop <- aggregate_and_pivot(adult_total_pop, "pop_adult_any_ethnicity")
-adult_total_pop_17 <- aggregate_and_pivot(adult_total_pop_17, "pop_total_any_ethnicity_17")
 total_pop <- aggregate_and_pivot(cdc_pop, "pop_total_any_ethnicity")
+adult_total_pop <- aggregate_and_pivot(adult_total_pop, "pop_adult_any_ethnicity")
+adult_male_total <- aggregate_and_pivot(adult_male_total, "pop_adult_male_any_ethnicity")
+adult_female_total <- aggregate_and_pivot(adult_female_total, "pop_adult_femlae_any_ethnicity")
+adult_total_pop_17 <- aggregate_and_pivot(adult_total_pop_17, "pop_total_any_ethnicity_17")
+adult_male_total_pop_17 <- aggregate_and_pivot(adult_male_total_pop_17, "pop_adult_male_any_ethnicity_17")
+adult_female_total_pop_17 <- aggregate_and_pivot(adult_female_total_pop_17, "pop_adult_female_any_ethnicity_17")
+total_pop_young <- aggregate_and_pivot(total_pop_young, "total_pop_young_any_ethnicity")
+total_pop_middle <- aggregate_and_pivot(total_pop_middle, "total_pop_middle_any_ethnicity")
+total_pop_older <- aggregate_and_pivot(total_pop_older, "total_pop_older_any_ethnicity")
 
 # Make a list of all populations
-pop_list <- list(total_pop, adult_total_pop, adult_total_pop_17, # Total populations
-                 pop_hisp, adult_hispanic, adult_hispanic_17, # Hispanic populations
-                 pop_black, adult_black, adult_male_black, adult_female_black, # Black total and adults
+jail_pm_pop_list <- list(total_pop, adult_total_pop, adult_male_total, adult_female_total, # Total populations
+                 total_pop_young, total_pop_middle, total_pop_older, # Total populations age groups
+                 total_poc, adult_total_poc, adult_male_poc, adult_female_poc, # Total POC
+                 total_poc_young, total_poc_middle, total_poc_older, # Total POC age groups
+                 pop_hisp, adult_hispanic, adult_male_hispanic, adult_female_hispanic, # Hispanic populations
+                 hispanic_young, hispanic_middle, hispanic_older, # Hispanic Age Groups
                  pop_black_nh, adult_black_nh, adult_male_black_nh, adult_female_black_nh, # Black non Hispanic totals and adults
-                 adult_black_17, adult_black_17_nh, # Black 17
-                 pop_white, adult_white, adult_male_white, adult_female_white, # White totals and adults
-                 pop_white_nh, adult_white_nh, adult_male_white_nh, adult_female_white_nh, # White non Hispanic and adults
-                 adult_white_17, adult_white_17_nh, # adult white 17
-                 pop_native_american, adult_native_american, adult_male_native_american, adult_female_native_american, # Native American totals and adults
-                 pop_native_american_nh, adult_native_american_nh, adult_male_native_american_nh, adult_female_native_american_nh, # Native American non Hispanic and adults
-                 adult_native_american_17, adult_native_american_17_nh, # Native American 17
-                 pop_asian, adult_asian, adult_male_asian, adult_female_asian, # Asian totals and adults
+                 black_young_nh, black_middle_nh, black_older_nh, # Black non Hispanic age groups
+                 pop_white_nh, adult_white_nh, adult_male_white_nh, adult_female_white_nh, # White non Hispanic
+                 white_young_nh, white_middle_nh, white_older_nh, # White non Hispanic Age Groups
+                 pop_native_american_nh, adult_native_american_nh, adult_male_native_american_nh, adult_female_native_american_nh, # Native American non Hispanic
+                 native_american_young_nh, native_american_middle_nh, native_american_older_nh, # Native American Non Hispanic Age Groups
                  pop_asian_nh, adult_asian_nh, adult_male_asian_nh, adult_female_asian_nh, # Asian non Hispanic and adults
-                 adult_asian_17, adult_asian_17_nh) # Asian 17
+                 asian_young_nh, asian_middle_nh, asian_older_nh) # Asian non Hispanic Age Groups
 
 # Join all datasets into one dataframe using merge on fips_county_code_year and for loop
 
 df_pop <- total_pop # initialize total_pop as first dataset. 
-for (i in 2:length(pop_list)) {
-  df_pop <- merge(df_pop, pop_list[i], by = "fips_state_county_code_year")
+for (i in 2:length(jail_pm_pop_list)) {
+  df_pop <- merge(df_pop, jail_pm_pop_list[i], by = "fips_state_county_code_year")
 }
 
 # add site_name column in second place using tibble library
@@ -556,12 +617,14 @@ sjc_site_populations <- df_pop[-missing_site_rows, ]
 # export datasets as csv and excel using export from rio package
 
 # csv
-export(df_pop, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
-export(sjc_site_populations, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/sjc_site_populations_jail_pm_2010_2020.csv")
+export(df_pop, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
+export(sjc_site_populations, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/sjc_site_populations_jail_pm_2010_2020.csv")
 
 # excel
-export(df_pop, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
-export(sjc_site_populations, "C:/Users/Reagan/Documents/ISLG/CDC Population Statistics/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.csv")
+export(df_pop, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/cdc_populations_jail_pm_2010_2020.xlsx",
+       overwrite = TRUE)
+export(sjc_site_populations, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/sjc_site_populations_jail_pm_2010_2020.xlsx",
+       overwrite = TRUE)
 
 
 
