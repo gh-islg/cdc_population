@@ -452,11 +452,11 @@ adult_asian_nh <- filter_aggregate_and_pivot(cdc_pop, adult_age_filter, non_hisp
 pop_asian_nh <- filter_aggregate_and_pivot(cdc_pop, any_age_filter, non_hispanic_filter, 
                                            asian_any_gender_filter, "pop_total_API_non_hispanic")
 asian_young_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
-                                                           asian_any_gender_filter, "young", "pop_API_young_any_ethnicity")
+                                                           asian_any_gender_filter, "young", "pop_API_young_non_hispanic")
 asian_middle_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
-                                                            asian_any_gender_filter, "middle", "pop_API_middle_any_ethnicity")
+                                                            asian_any_gender_filter, "middle", "pop_API_middle_non_hispanic")
 asian_older_nh <- filter_aggregate_and_pivot_age_groups(cdc_pop, non_hispanic_filter,
-                                                           asian_any_gender_filter, "older", "pop_API_older_any_ethnicity")
+                                                           asian_any_gender_filter, "older", "pop_API_older_non_hispanic")
 
 #### asian pacific islander +17 population ####
 adult_asian_17 <- filter_aggregate_and_pivot(cdc_pop, adult_age_17_filter, non_and_hispanic_filter, 
