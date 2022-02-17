@@ -39,7 +39,7 @@ jail_pm_sites <- c("PEN", "PIM", "CHA", "ALL", "HAR",
 
 cdc_pop <- filter(cdc_pop, site_name %in% jail_pm_sites) # filter for jail_pm
 
-jail_pm <- read.csv("C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/Jail PM/monthly_jail_measures_all_sites_BLtoY5 (1).csv") # import Jail PM Dataset
+jail_pm <- read.csv("C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/monthly_jail_measures_all_sites_BLtoY5 (1).csv") # import Jail PM Dataset
 
 # make quarter variable
 month_to_quarter_dict <- c("2015-11"="Nov 15 - Apr 16", "2015-12"="Nov 15 - Apr 16", 
