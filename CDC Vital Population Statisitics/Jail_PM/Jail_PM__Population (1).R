@@ -103,8 +103,8 @@ jail_pm_not_null <- jail_pm[-null_quarter_year, ]
 avg_measures <- c("ADP_admrel", "ALOS_rel", "ADP_snapshot", "ALOS_conf")
 sum_measures <- "bookings"
 # Define Average dataframe vs summed
-jail_pm_avg <- filter(jail_pm, measure %in% avg_measures) # filter average measures
-jail_pm_sum <- filter(jail_pm, measure == sum_measures) # filter sum measures
+jail_pm_avg <- filter(jail_pm_not_null, measure %in% avg_measures) # filter average measures
+jail_pm_sum <- filter(jail_pm_not_null, measure == sum_measures) # filter sum measures
 
 
 ######### Sum Values by SJC_Quarter #################
@@ -121,30 +121,39 @@ values_by_quarter <- function(df, agg_func) {
   
   for (current_site in unique(df$site)) {
     for (race in unique(df$race_ethn)) {
-      for (cat in df$pop_cat) {
+      for (cat in unique(df$pop_cat)) {
         # Average Measures  
         if (agg_func == "average") {
           avg_df <- filter(df, site == current_site, race_ethn == race, pop_cat == cat)
           #avg_df <- summarise_at(group_by(avg_df, sjc_quarter, sub_pop, measure), vars(value, calc_n), funs(mean(., na.rm = TRUE)))
           # Use Aggregate()
+          cat("Adding", current_site, race, cat, " ")
+          if (dim(avg_df)[1] == 0) { # Skip to next iteration if df has no rows
+            next
+          }
           avg_df <- aggregate(avg_df[, 11:12], by = list(avg_df$sjc_quarter, avg_df$sub_pop, avg_df$measure),
-                              FUN = mean, na.rm = TRUE)
+                              FUN = mean)
           colnames(avg_df) <- c("sjc_quarter", "sub_pop", "measure", "value", "calc_n")
           # Add columns
           avg_df <- add_column(avg_df, site = current_site, .before = "sjc_quarter")
           current_year <- as.integer(paste("20", str_sub(avg_df$sjc_quarter, 5, 6), sep = ""))
           avg_df <- add_column(avg_df, year = current_year, .after = "site")
           # Bind and Join
-          final_df <- rbind(final_df, avg_df)
           cat("Adding", current_site, race, cat, " ")
+          final_df <- rbind(final_df, avg_df)
+          print("\n")
         }
         # else mean that sum is the aggregate function 
         else {
           # Sum Measures
           sum_df <- filter(df, site == current_site, race_ethn == race, pop_cat == cat)
           #sum_df <- summarise_at(group_by(sum_df, sjc_quarter, sub_pop, measure), vars(value, calc_n), funs(sum(., na.rm = TRUE)))
+          if (dim(sum_df)[1] == 0) { # Skip to next iteration if df has no rows
+            next
+          }
+          cat("Adding", current_site, race, cat, " ")
           sum_df <- aggregate(sum_df[, 11:12], by = list(sum_df$sjc_quarter, sum_df$sub_pop, sum_df$measure),
-                              FUN = sum, na.rm = TRUE)
+                              FUN = sum)
           colnames(sum_df) <- c("sjc_quarter", "sub_pop", "measure", "value", "calc_n")
           # Add columns
           sum_df <- add_column(sum_df, site = current_site, .before = "sjc_quarter")
@@ -152,7 +161,7 @@ values_by_quarter <- function(df, agg_func) {
           sum_df <- add_column(sum_df, year = current_year, .after = "site")
           # Bind and join
           final_df <- rbind(final_df, sum_df)
-          cat("Adding", current_site, race, cat, " ")
+          print("\n")
         }
         
       }
@@ -167,7 +176,7 @@ values_by_quarter <- function(df, agg_func) {
   
   # Use a for loop to join the individual populations
   for (i in seq(1, length(cohort_dict))) {
-    insert_rows <- final_df$site_name == names(cohort_dict[i])
+    insert_rows <- final_df$site == names(cohort_dict[i])
     final_df[insert_rows, "cohort"] <- cohort_dict[i]
   }
   
@@ -186,7 +195,7 @@ values_by_quarter <- function(df, agg_func) {
 }
 
 quarter_df_sum <- values_by_quarter(jail_pm_sum, "sum")
-
+quarter_df_avg  <- values_by_quarter(jail_pm_avg, "average")
 ############# Join populations to jail_pm sheet ##################
 
 # join jail_pm data with population data
