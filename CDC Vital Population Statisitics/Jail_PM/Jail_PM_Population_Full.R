@@ -291,7 +291,8 @@ for (i in seq(1, length(pop_race_dict))) {
   cdc_pop_long[insert_rows, "race_ethn"] <- pop_race_dict[i]
 }
 
-cdc_pop_long$measure <- "gen_adult_pop" # This should be the variable name of all adult populations 
+cdc_pop_long$measure <- "gen_adult_pop" # This should be the variable name of all adult populations
+cdc_pop_long$pop_cat <- "all_pop"
 cdc_pop_long$calc_n <- NA
 
 populate_prop_gen <- function(df) {
@@ -316,7 +317,7 @@ populate_prop_gen <- function(df) {
                                NA, NA, race, NA, NA, "prop_gen_adult_pop", 
                                prop_gen_adult_pop, NA)
           
-          colnames(new_df) <- colnames(current_df)
+          colnames(new_df) <- colnames(current_df) # get column names from filtered df
         
           final_df <- rbind(final_df, new_df) # add new row to dataframe
         }
@@ -326,26 +327,93 @@ populate_prop_gen <- function(df) {
   return(final_df)
 }
 
+
 cdc_pop_long_prop_gen <- populate_prop_gen(cdc_pop_long) # call populate_prop_gen function to get population rates
+cdc_pop_long_prop_gen$pop_cat <- "all_pop"
 
 quarter_df <- rbind(quarter_df, cdc_pop_long_prop_gen) # rbind quarter_df and cdc_pop data.frames 
 
-add_bookings_rates <- function(df) {
+add_bookings_rates_all_pop <- function(df) {
   final_df <- df # initialize final_df
+  pop_cat_list <- c("all_pop", "freq_utl", "leg_stat_booking", "severity", "leg_stat_snap")
   for (current_site in unique(df$site)) {
     for (current_year in unique(df$year)) {
       for (current_quarter in unique(df$sjc_quarter))
         for (race in unique(df$race_ethn))
-          for (pop in unique(df$pop_cat)) {
-            for(sub in unique(df$sub_pop)) {
-              new_df <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
-                               race_ethn == race, )
-            }
-          }
+          for (pop in unique(pop_cat_list)) {
+            for(sub_loop in unique(df$sub_pop)) {
+              if (pop == "all_pop") { # all_pop does not have a sub_pop
+                current_df <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
+                                 race_ethn == race, pop_cat == pop, measure == "bookings")
+                current_df_white <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
+                                           race_ethn == "W", pop_cat == pop, measure == "bookings")
+              }
+              else { # if pop is not all_pop we have to filter for sub_pop
+                current_df <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
+                               race_ethn == race, pop_cat == pop, sub_pop == sub_loop, measure == "bookings")
+                current_df_white <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
+                                           race_ethn == "W", pop_cat == pop, sub_pop == sub_loop, measure == "bookings")
+              }
+              if ((dim(current_df)[1] == 0) | (dim(current_df_white)[1] == 0)) {
+                next # if data.frame is empty move to the next iteration
+              }
+              
+              else { # if the dataframe has rows proceed to the calculation
+                # get population for site and year
+                cat("Adding", current_site, current_year, current_quarter, race, pop, sub_loop, " ")
+                current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
+                if (current_year >= 2020) { # We only have populations from 2015 - 2020
+                  current_year_in_loop <- 2020
+                }
+                
+                pop_df <- filter(df, site == current_site, year == current_year_in_loop, race_ethn == race,
+                                 pop_cat == "all_pop", measure == "gen_adult_pop") # filter for adult population
+                pop_df_white <- filter(df, site == current_site, year == current_year_in_loop, race_ethn == "W",
+                                       pop_cat == "all_pop", measure == "gen_adult_pop")
+                  
+                race_pop <- pop_df[, "value"] # get population
+                race_pop_white <- pop_df_white[, "value"]
+                bookings <- current_df[, "value"] # get bookings for that population
+                bookings_white <- current_df_white[, "value"]
+                
+                booking_rate <- round((bookings / race_pop) * 100000, 2) # normalize per 100,000 people
+                
+                booking_rate_RRI <- round(((((bookings / race_pop)) * 100000) / 
+                                            ((bookings_white / race_pop_white) * 100000)), 2)
+                
+                current_cohort <- unique(current_df$cohort) # get cohort from filtered df
+                current_sjc_year <- unique(current_df$sjc_year) # get sjc_year from filtered df
+                current_quarter_long <- unique(current_df$quarter) # get current quarter
+                if (pop == "all_pop") { # if pop_cat is "all_pop" sub_pop is null
+                  current_sub_pop <- NA
+                }
+                
+                else {
+                  current_sub_pop <- sub_loop
+                }
+
+                new_df <- data.frame(current_site, current_year, current_cohort,
+                                     current_sjc_year, current_quarter, current_quarter_long,
+                                     race, pop, current_sub_pop, "booking_rate", booking_rate, 
+                                     NA)
+                new_df_RRI <- data.frame(current_site, current_year, current_cohort,
+                                     current_sjc_year, current_quarter, current_quarter_long,
+                                     race, pop, current_sub_pop, "booking_rate", booking_rate_RRI, 
+                                     NA)
+                colnames(new_df) <- colnames(current_df) # get column names from current_df
+                colnames(new_df_RRI) <- colnames(current_df)
+                
+                final_df <- rbind(final_df, new_df, new_df_RRI) # add new row before going to the next iteration
+              }
+        }
+      }
     }
   }
-  
+  return(final_df)
 }
+
+quarter_df_with_booking <- add_bookings_rates(quarter_df)
+  
 
 
 .rs.restartR()
