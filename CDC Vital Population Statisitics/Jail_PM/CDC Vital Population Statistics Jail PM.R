@@ -151,8 +151,8 @@ asian_any_gender_filter <- c(7,8)
 all_males <- c(1, 3, 5, 7)
 all_female <- c(2, 4, 6, 8)
 poc <- c(3, 4, 5, 6, 7, 8)
-poc_males <- c(3, 5, 7)
-poc_females <- c(4, 6, 8)
+poc_males <- c(1, 3, 5, 7)
+poc_females <- c(2, 4, 6, 8)
 
 filter_aggregate_and_pivot <- function(df, age_filter, hisp_filter, racesex_filter, values_name, age_groups) {
   
@@ -500,17 +500,20 @@ hispanic_older <- aggregate_and_pivot(hispanic_older, "pop_older_hispanic_any_ra
 
 ########## POC Population ##################
 total_poc <- filter(cdc_pop, racesex %in% poc)
-adult_total_poc <- filter(cdc_pop, age >= adult_age_filter, racesex %in% poc)
-adult_male_poc <- filter(cdc_pop, age >= adult_age_filter, racesex %in% poc_males)
-adult_female_poc <- filter(cdc_pop, age >= adult_age_filter, racesex %in% poc_females)
+# We need to add white Hispanics to people of color
+white_hispanics <- filter(cdc_pop, racesex %in% white_any_gender_filter, hisp == hispanic_filter)
+total_poc <- rbind(total_poc, white_hispanics)
+adult_total_poc <- filter(total_poc, age >= adult_age_filter)
+adult_male_poc <- filter(total_poc, age >= adult_age_filter, racesex %in% poc_males)
+adult_female_poc <- filter(total_poc, age >= adult_age_filter, racesex %in% poc_females)
 ########## POC Population 17+ ###############
-adult_total_poc_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% poc)
-adult_male_poc_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% poc_males)
-adult_female_poc_17 <- filter(cdc_pop, age >= adult_age_17_filter, racesex %in% poc_females)
+adult_total_poc_17 <- filter(total_poc, age >= adult_age_17_filter)
+adult_male_poc_17 <- filter(total_poc, age >= adult_age_17_filter, racesex %in% poc_males)
+adult_female_poc_17 <- filter(total_poc, age >= adult_age_17_filter, racesex %in% poc_females)
 ######### POC Population Age Groups ##########
-total_poc_young <- filter(cdc_pop, age >= young_low & age <= young_high, racesex %in% poc)
-total_poc_middle <- filter(cdc_pop, age >= middle_low & age <= middle_high, racesex %in% poc)
-total_poc_older <- filter(cdc_pop, age >= older_low & age <= older_high, racesex %in% poc)
+total_poc_young <- filter(total_poc, age >= young_low & age <= young_high)
+total_poc_middle <- filter(total_poc, age >= middle_low & age <= middle_high)
+total_poc_older <- filter(total_poc, age >= older_low & age <= older_high)
 
 # pivot and aggregate POC
 total_poc <- aggregate_and_pivot(total_poc, "pop_total_poc")
