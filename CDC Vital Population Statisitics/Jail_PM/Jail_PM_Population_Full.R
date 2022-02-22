@@ -508,7 +508,7 @@ add_prop_and_inc_rate_ADP_all_pop <- function(df) {
 }
 
 
-add_prop_and_inc_rate_ADP_all_pop <- function(df) {
+add_ALOS_all_pop <- function(df) {
   final_df <- df # initialize final_df
   race_ethn_list <- c("AIAN", "all_race_ethn", "API", "B", "L", "POC", "W")
   for (current_site in unique(df$site)) {
@@ -516,25 +516,27 @@ add_prop_and_inc_rate_ADP_all_pop <- function(df) {
       for (race in race_ethn_list) {
         # We are just going to calculate for all_pop in this loop
         # get current year  
-        # ADP admrel 
-        current_df_ALOS_rel <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
+        
+        # ALOS_rel
+        current_df_ALOS_rel <- filter(df, site == current_site, sjc_quarter == current_quarter, 
                                           race_ethn == race, pop_cat == "all_pop", measure == "ALOS_rel")
-        total_df_ADP_admrel <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
-                                        race_ethn == "all_race_ethn", pop_cat == "all_pop", measure == "ALOS_con")
+        total_df_ALOS_rel <- filter(df, site == current_site, sjc_quarter == current_quarter, 
+                                        race_ethn == "all_race_ethn", pop_cat == "all_pop", measure == "ALOS_rel")
           
-        # ADP_snapshot
-        current_df_ADP_snapshot <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
-                                            race_ethn == race, pop_cat == "all_pop", measure == "ADP_snapshot")
-        total_df_ADP_snapshot <- filter(df, site == current_site, year == current_year, sjc_quarter == current_quarter, 
-                                          race_ethn == "all_race_ethn", pop_cat == "all_pop", measure == "ADP_snapshot")
+        # ALOS_conf
+        current_df_ALOS_conf <- filter(df, site == current_site, sjc_quarter == current_quarter, 
+                                            race_ethn == race, pop_cat == "all_pop", measure == "ALOS_conf")
+        total_df_ALOS_conf <- filter(df, site == current_site, sjc_quarter == current_quarter, 
+                                          race_ethn == "all_race_ethn", pop_cat == "all_pop", measure == "ALOS_conf")
           
-        if ((dim(current_df_ADP_admrel)[1] == 0) | (dim(current_df_ADP_snapshot)[1] == 0)) {
+        if ((dim(current_df_ALOS_rel)[1] == 0) | (dim(current_df_ALOS_conf)[1] == 0)) {
           next # if data.frame is empty move to the next iteration
         }
           
         else { # if the data frame has rows proceed to the calculation
           # get population for site and year
-          cat("Adding", current_site, current_year, current_quarter, race, " ")
+          cat("Adding", current_site, current_quarter, race, " ")
+          current_year <- unique(current_df_ALOS_rel$year)
           current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
             
           if (current_year >= 2020) { # We only have populations from 2015 - 2020
@@ -547,74 +549,47 @@ add_prop_and_inc_rate_ADP_all_pop <- function(df) {
                                  pop_cat == "all_pop", measure == "gen_adult_pop") # filter for white adult population  `
             
           race_pop <- pop_df[, "value"]
-            total_pop <- pop_total_df[, "value"]
+          total_pop <- pop_total_df[, "value"]
             
-            race_ADP_admrel <- current_df_ADP_admrel[, "value"] # get population
-            race_ADP_snapshot <- current_df_ADP_snapshot[, "value"]
-            total_ADP_admrel <- total_df_ADP_admrel[, "value"] # get total ADP_admrel
-            total_ADP_snapshot <- total_df_ADP_snapshot[, "value"] # get total ADP_snapshot
+          race_ALOS_rel <- current_df_ALOS_rel[, "value"] # get population
+          race_ALOS_conf <- current_df_ALOS_conf[, "value"]
+          total_ALOS_rel <- total_df_ALOS_rel[, "value"] # get total ADP_admrel
+          total_ALOS_conf <- total_df_ALOS_conf[, "value"] # get total ADP_snapshot
             
-            prop_of_subpop_ADP_admrel <- round(race_ADP_admrel / total_ADP_admrel, 2)
-            prop_of_subpop_ADP_snapshots <- round(race_ADP_snapshot / total_ADP_snapshot, 2) 
-            
-            inc_rate_ADP_admrel <- round((race_ADP_admrel / race_pop) * 100000, 2) # normalize per 100,000
-            inc_rate_ADP_snapshots <- round((race_ADP_snapshot / race_pop) * 100000, 2) # normalize per 100,000
-            
-            ADP_admrel_disprop_ratio <- round(((race_ADP_admrel / total_ADP_admrel) / (race_pop / total_pop)), 2)
-            ADP_snapshot_disprop_ratio <- round(((race_ADP_snapshot / total_ADP_snapshot) / (race_pop / total_pop)), 2)
+          ALOS_rel_disprop_ratio <- round(((race_ALOS_rel / total_ALOS_rel) / (race_pop / total_pop)), 2)
+          ALOS_conf_disprop_ratio <- round(((race_ALOS_conf / total_ALOS_conf) / (race_pop / total_pop)), 2)
             
             
-            current_cohort <- unique(current_df_ADP_admrel$cohort) # get cohort from filtered df
-            current_sjc_year <- unique(current_df_ADP_admrel$sjc_year) # get sjc_year from filtered df
-            current_quarter_long <- unique(current_df_ADP_admrel$quarter) # get current quarter
+          current_cohort <- unique(current_df_ALOS_rel$cohort) # get cohort from filtered df
+          current_sjc_year <- unique(current_df_ALOS_rel$sjc_year) # get sjc_year from filtered df
+          current_quarter_long <- unique(current_df_ALOS_rel$quarter) # get current quarter
             
-            new_df_prop_of_sub_pop_ADP_admrel <- data.frame(current_site, current_year, current_cohort,
-                                                            current_sjc_year, current_quarter, current_quarter_long,
-                                                            race, "all_pop", NA, "prop_of_subpop_ADP_admrel", prop_of_subpop_ADP_admrel, 
-                                                            NA)
-            new_df_prop_of_subpop_ADP_snapshots <- data.frame(current_site, current_year, current_cohort,
-                                                              current_sjc_year, current_quarter, current_quarter_long,
-                                                              race, "all_pop", NA, "prop_of_subpop_ADP_snapshot", prop_of_subpop_ADP_snapshots, 
-                                                              NA)
             
-            new_df_inc_rate_ADP_admrel <- data.frame(current_site, current_year, current_cohort,
-                                                     current_sjc_year, current_quarter, current_quarter_long,
-                                                     race, "all_pop", NA, "Inc_rate_ADP_admrel", inc_rate_ADP_admrel, 
-                                                     NA)
-            new_df_inc_rate_ADP_snapshots <- data.frame(current_site, current_year, current_cohort,
-                                                        current_sjc_year, current_quarter, current_quarter_long,
-                                                        race, "all_pop", NA, "Inc_rate_ADP_snapshot", inc_rate_ADP_snapshots, 
-                                                        NA)
-            new_df_ADP_admrel_disprop_ratio <- data.frame(current_site, current_year, current_cohort,
+          new_df_ALOS_rel_disprop_ratio <- data.frame(current_site, current_year, current_cohort,
                                                           current_sjc_year, current_quarter, current_quarter_long,
-                                                          race, "all_pop", NA, "ADP_admrel_disprop_ratio", ADP_admrel_disprop_ratio, 
+                                                          race, "all_pop", NA, "ALOS_rel_disparity_ratio", ALOS_rel_disprop_ratio, 
                                                           NA)
-            new_df_ADP_snapshot_disprop_ratio <- data.frame(current_site, current_year, current_cohort,
+          new_df_ALOS_conf_disprop_ratio <- data.frame(current_site, current_year, current_cohort,
                                                             current_sjc_year, current_quarter, current_quarter_long,
-                                                            race, "all_pop", NA, "ADP_snapshot_disprop_ratio", ADP_snapshot_disprop_ratio, 
+                                                            race, "all_pop", NA, "ALOS_conf_disparity_ratio", ALOS_conf_disprop_ratio, 
                                                             NA)
             
             
+          colnames(new_df_ALOS_rel_disprop_ratio) <- colnames(current_df_ALOS_rel) # get column names from current_df
+          colnames(new_df_ALOS_conf_disprop_ratio) <- colnames(current_df_ALOS_conf)
+
             
-            colnames(new_df_prop_of_sub_pop_ADP_admrel) <- colnames(current_df_ADP_admrel) # get column names from current_df
-            colnames(new_df_prop_of_subpop_ADP_snapshots) <- colnames(current_df_ADP_admrel)
-            colnames(new_df_inc_rate_ADP_admrel) <- colnames(current_df_ADP_admrel)
-            colnames(new_df_inc_rate_ADP_snapshots) <- colnames(current_df_ADP_admrel)
-            colnames(new_df_ADP_admrel_disprop_ratio) <- colnames(current_df_ADP_admrel)
-            colnames(new_df_ADP_snapshot_disprop_ratio) <- colnames(current_df_ADP_admrel)
-            
-            final_df <- rbind(final_df, new_df_prop_of_sub_pop_ADP_admrel, new_df_prop_of_subpop_ADP_snapshots,
-                              new_df_inc_rate_ADP_admrel, new_df_inc_rate_ADP_snapshots,
-                              new_df_ADP_admrel_disprop_ratio, new_df_ADP_snapshot_disprop_ratio) # add new row before going to the next iteration
-          }
-        }
+          final_df <- rbind(final_df, new_df_ALOS_rel_disprop_ratio,
+                            new_df_ALOS_conf_disprop_ratio) # add new row before going to the next iteration
+      }
     }
   }
   return(final_df)  
 }
   
-quarter_df <- add_prop_and_inc_rate_ADP_all_pop(quarter_df)
+quarter_df <- add_ALOS_all_pop(quarter_df)
 
 write.csv(quarter_df, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/jail_pm_quarter_df.csv",
           row.names = FALSE)
+
 .rs.restartR()
