@@ -317,7 +317,7 @@ populate_prop_gen <- function(df) {
           race_pop <- current_df[current_df$race_ethn == race, "value"] # get the population for the specific race
           current_cohort <- unique(current_df$cohort) # get current cohort
           # Calculate the propcolortion of general adult population for the specific race
-          prop_gen_adult_pop <- round(race_pop / total_pop, 2)
+          prop_gen_adult_pop <- round(race_pop / total_pop, 3)
           new_df <- data.frame(current_site, current_year, current_cohort, NA,
                                NA, NA, race, NA, NA, "prop_gen_adult_pop", 
                                prop_gen_adult_pop, NA)
@@ -358,7 +358,7 @@ add_bookings_rates_all_pop <- function(df) {
         else { # if the data frame has rows proceed to the calculation
                 # get population for site and year
             current_year <- unique(current_df$year) # get current year
-            cat("Adding", current_site, current_year, current_quarter, race, " ")
+            cat("Adding", current_site, current_year, current_quarter, race, "\n", " ")
             current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
              
             if (current_year >= 2020) { # We only have populations from 2015 - 2020
@@ -375,10 +375,10 @@ add_bookings_rates_all_pop <- function(df) {
           bookings <- current_df[, "value"] # get bookings for that population
           bookings_white <- current_df_white[, "value"]
                 
-          booking_rate <- round((bookings / race_pop) * 100000, 2) # normalize per 100,000 people
+          booking_rate <- round((bookings / race_pop) * 100000, 3) # normalize per 100,000 people
                 
           booking_rate_RRI <- round(((((bookings / race_pop)) * 100000) / 
-                                        ((bookings_white / race_pop_white) * 100000)), 2)
+                                        ((bookings_white / race_pop_white) * 100000)), 3)
                 
           current_cohort <- unique(current_df$cohort) # get cohort from filtered df
           current_sjc_year <- unique(current_df$sjc_year) # get sjc_year from filtered df
@@ -427,7 +427,7 @@ add_prop_and_inc_rate_ADP_admrel_all_pop <- function(df) {
           else { # if the data frame has rows proceed to the calculation
             # get population for site and year
             current_year <- unique(current_df_ADP_admrel$year)
-            cat("Adding", current_site, current_year, current_quarter, race, " ")
+            cat("Adding", current_site, current_year, current_quarter, race, "\n", " ")
             current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
             
             if (current_year >= 2020) { # We only have populations from 2015 - 2020
@@ -445,11 +445,11 @@ add_prop_and_inc_rate_ADP_admrel_all_pop <- function(df) {
             race_ADP_admrel <- current_df_ADP_admrel[, "value"] # get population
             total_ADP_admrel <- total_df_ADP_admrel[, "value"] # get total ADP_admrel
             
-            prop_of_subpop_ADP_admrel <- round(race_ADP_admrel / total_ADP_admrel, 2)
+            prop_of_subpop_ADP_admrel <- round(race_ADP_admrel / total_ADP_admrel, 3)
             
-            inc_rate_ADP_admrel <- round((race_ADP_admrel / race_pop) * 100000, 2) # normalize per 100,000
+            inc_rate_ADP_admrel <- round((race_ADP_admrel / race_pop) * 100000, 3) # normalize per 100,000
 
-            ADP_admrel_disprop_ratio <- round(((race_ADP_admrel / total_ADP_admrel) / (race_pop / total_pop)), 2)
+            ADP_admrel_disprop_ratio <- round(((race_ADP_admrel / total_ADP_admrel) / (race_pop / total_pop)), 3)
             
             current_cohort <- unique(current_df_ADP_admrel$cohort) # get cohort from filtered df
             current_sjc_year <- unique(current_df_ADP_admrel$sjc_year) # get sjc_year from filtered df
@@ -508,7 +508,7 @@ add_prop_and_inc_rate_ADP_snapshots_all_pop <- function(df) {
         else { # if the data frame has rows proceed to the calculation
           # get population for site and year
           current_year <- unique(current_df_ADP_snapshot$year)
-          cat("Adding", current_site, current_year, current_quarter, race, " ")
+          cat("Adding", current_site, current_year, current_quarter, race, "\n", " ")
           current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
           
           if (current_year >= 2020) { # We only have populations from 2015 - 2020
@@ -526,11 +526,11 @@ add_prop_and_inc_rate_ADP_snapshots_all_pop <- function(df) {
           race_ADP_snapshot <- current_df_ADP_snapshot[, "value"]
           total_ADP_snapshot <- total_df_ADP_snapshot[, "value"] # get total ADP_snapshot
           
-          prop_of_subpop_ADP_snapshots <- round(race_ADP_snapshot / total_ADP_snapshot, 2) 
+          prop_of_subpop_ADP_snapshots <- round(race_ADP_snapshot / total_ADP_snapshot, 3) 
           
-          inc_rate_ADP_snapshots <- round((race_ADP_snapshot / race_pop) * 100000, 2) # normalize per 100,000
+          inc_rate_ADP_snapshots <- round((race_ADP_snapshot / race_pop) * 100000, 3) # normalize per 100,000
           
-          ADP_snapshot_disprop_ratio <- round(((race_ADP_snapshot / total_ADP_snapshot) / (race_pop / total_pop)), 2)
+          ADP_snapshot_disprop_ratio <- round(((race_ADP_snapshot / total_ADP_snapshot) / (race_pop / total_pop)), 3)
           
           
           current_cohort <- unique(current_df_ADP_snapshot$cohort) # get cohort from filtered df
@@ -583,7 +583,7 @@ add_ALOS_rel_all_pop <- function(df) {
         current_df_ALOS_rel <- filter(df, site == current_site, sjc_quarter == current_quarter, 
                                           race_ethn == race, pop_cat == "all_pop", measure == "ALOS_rel")
         white_df_ALOS_rel <- filter(df, site == current_site, sjc_quarter == current_quarter, 
-                                        race_ethn == "all_race_ethn", pop_cat == "all_pop", measure == "ALOS_rel")
+                                        race_ethn == "W", pop_cat == "all_pop", measure == "ALOS_rel")
 
         if (dim(current_df_ALOS_rel)[1] == 0) {
           next # if data.frame is empty move to the next iteration
@@ -592,7 +592,7 @@ add_ALOS_rel_all_pop <- function(df) {
         else { # if the data frame has rows proceed to the calculation
           # get population for site and year
           current_year <- unique(current_df_ALOS_rel$year)
-          cat("Adding", current_site, current_quarter, race, current_year, " ")
+          cat("Adding", current_site, current_quarter, race, current_year, "\n", " ")
           current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
             
           if (current_year >= 2020) { # We only have populations from 2015 - 2020
@@ -602,7 +602,7 @@ add_ALOS_rel_all_pop <- function(df) {
           race_ALOS_rel <- current_df_ALOS_rel[, "value"] # get population
           white_ALOS_rel <- white_df_ALOS_rel[, "value"] # get total ALOS_rel
             
-          ALOS_rel_disprop_ratio <- round(race_ALOS_rel / white_ALOS_rel, 4)
+          ALOS_rel_disprop_ratio <- round(race_ALOS_rel / white_ALOS_rel, 3)
 
           current_cohort <- unique(current_df_ALOS_rel$cohort) # get cohort from filtered df
           current_sjc_year <- unique(current_df_ALOS_rel$sjc_year) # get sjc_year from filtered df
@@ -647,7 +647,7 @@ add_ALOS_conf_all_pop <- function(df) {
         
         else { # if the data frame has rows proceed to the calculation
           # get population for site and year
-          cat("Adding", current_site, current_quarter, race, " ")
+          cat("Adding", current_site, current_quarter, race, "\n", " ")
           current_year <- unique(current_df_ALOS_conf$year)
           current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
           
@@ -687,9 +687,7 @@ add_ALOS_conf_all_pop <- function(df) {
             finally = function(f) {
               next
             }
-            
-          ) 
-          
+          )
           
         }
       }
@@ -698,6 +696,7 @@ add_ALOS_conf_all_pop <- function(df) {
 }
 
 quarter_df <- add_ALOS_conf_all_pop(quarter_df)
+
 
 write.csv(quarter_df, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/jail_pm_quarter_df.csv",
           row.names = FALSE)
