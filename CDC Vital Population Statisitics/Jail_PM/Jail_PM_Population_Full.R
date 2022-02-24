@@ -570,7 +570,7 @@ add_prop_and_inc_rate_ADP_snapshots_all_pop <- function(df) {
 
 quarter_df <- add_prop_and_inc_rate_ADP_snapshots_all_pop(quarter_df) # Call function for ADP_snapshots rates
 
-add_ALOS_admrel_all_pop <- function(df) {
+add_ALOS_rel_all_pop <- function(df) {
   final_df <- df # initialize final_df
   race_ethn_list <- c("AIAN", "all_race_ethn", "API", "B", "L", "POC", "W")
   for (current_site in unique(df$site)) {
@@ -582,7 +582,7 @@ add_ALOS_admrel_all_pop <- function(df) {
         # ALOS_rel
         current_df_ALOS_rel <- filter(df, site == current_site, sjc_quarter == current_quarter, 
                                           race_ethn == race, pop_cat == "all_pop", measure == "ALOS_rel")
-        total_df_ALOS_rel <- filter(df, site == current_site, sjc_quarter == current_quarter, 
+        white_df_ALOS_rel <- filter(df, site == current_site, sjc_quarter == current_quarter, 
                                         race_ethn == "all_race_ethn", pop_cat == "all_pop", measure == "ALOS_rel")
 
         if (dim(current_df_ALOS_rel)[1] == 0) {
@@ -599,18 +599,10 @@ add_ALOS_admrel_all_pop <- function(df) {
             current_year_in_loop <- 2020
           }
             
-          pop_df <- filter(df, site == current_site, year == current_year_in_loop, race_ethn == race,
-                            pop_cat == "all_pop", measure == "gen_adult_pop") # filter for adult population
-          pop_total_df <- filter(df, site == current_site, year == current_year_in_loop, race_ethn == "all_race_ethn",
-                                 pop_cat == "all_pop", measure == "gen_adult_pop") # filter for white adult population  `
-            
-          race_pop <- pop_df[, "value"]
-          total_pop <- pop_total_df[, "value"]
-            
           race_ALOS_rel <- current_df_ALOS_rel[, "value"] # get population
-          total_ALOS_rel <- total_df_ALOS_rel[, "value"] # get total ALOS_rel
+          white_ALOS_rel <- white_df_ALOS_rel[, "value"] # get total ALOS_rel
             
-          ALOS_rel_disprop_ratio <- round(((race_ALOS_rel / total_ALOS_rel) / (race_pop / total_pop)), 2)
+          ALOS_rel_disprop_ratio <- round(race_ALOS_rel / white_ALOS_rel, 4)
 
           current_cohort <- unique(current_df_ALOS_rel$cohort) # get cohort from filtered df
           current_sjc_year <- unique(current_df_ALOS_rel$sjc_year) # get sjc_year from filtered df
@@ -632,7 +624,7 @@ add_ALOS_admrel_all_pop <- function(df) {
   return(final_df)  
 }
   
-quarter_df <- add_ALOS_admrel_all_pop(quarter_df)
+quarter_df <- add_ALOS_rel_all_pop(quarter_df)
 
 add_ALOS_conf_all_pop <- function(df) {
   final_df <- df # initialize final_df
@@ -646,10 +638,10 @@ add_ALOS_conf_all_pop <- function(df) {
         # ALOS_conf
         current_df_ALOS_conf <- filter(df, site == current_site, sjc_quarter == current_quarter, 
                                        race_ethn == race, pop_cat == "all_pop", measure == "ALOS_conf")
-        total_df_ALOS_conf <- filter(df, site == current_site, sjc_quarter == current_quarter, 
-                                     race_ethn == "all_race_ethn", pop_cat == "all_pop", measure == "ALOS_conf")
+        white_df_ALOS_conf <- filter(df, site == current_site, sjc_quarter == current_quarter, 
+                                     race_ethn == "W", pop_cat == "all_pop", measure == "ALOS_conf")
         
-        if (dim(current_df_ALOS_conf)[1] == 0) {
+        if (dim(current_df_ALOS_conf)[1] == 0 | dim(white_df_ALOS_conf)[1] == 0) {
           next # if data.frame is empty move to the next iteration
         }
         
@@ -663,18 +655,11 @@ add_ALOS_conf_all_pop <- function(df) {
             current_year_in_loop <- 2020
           }
           
-          pop_df <- filter(df, site == current_site, year == current_year_in_loop, race_ethn == race,
-                           pop_cat == "all_pop", measure == "gen_adult_pop") # filter for adult population
-          pop_total_df <- filter(df, site == current_site, year == current_year_in_loop, race_ethn == "all_race_ethn",
-                                 pop_cat == "all_pop", measure == "gen_adult_pop") # filter for white adult population  `
-          
-          race_pop <- pop_df[, "value"]
-          total_pop <- pop_total_df[, "value"]
           
           race_ALOS_conf <- current_df_ALOS_conf[, "value"] # get population
-          total_ALOS_conf <- total_df_ALOS_conf[, "value"] # get total ADP_snapshot
+          white_ALOS_conf <- white_df_ALOS_conf[, "value"] # get total ADP_snapshot
           
-          ALOS_conf_disprop_ratio <- round(((race_ALOS_conf / total_ALOS_conf) / (race_pop / total_pop)), 2)
+          ALOS_conf_disprop_ratio <- round(race_ALOS_conf / white_ALOS_conf, 3)
           
           
           current_cohort <- unique(current_df_ALOS_conf$cohort) # get cohort from filtered df
@@ -689,9 +674,23 @@ add_ALOS_conf_all_pop <- function(df) {
           
           
           colnames(new_df_ALOS_conf_disprop_ratio) <- colnames(current_df_ALOS_conf)# get column names from current_df
+    
+          tryCatch( {
+            
+            final_df <- rbind(final_df, new_df_ALOS_conf_disprop_ratio) # add new row before going to the next iteration
+          
+            },
+            error = function(e) {
+              cat("Adding", current_site, current_quarter, race, "COULD NOT BE ADDED", " ")
+              print(paste("MY ERROR: ", e))
+            },
+            finally = function(f) {
+              next
+            }
+            
+          ) 
           
           
-          final_df <- rbind(final_df, new_df_ALOS_conf_disprop_ratio) # add new row before going to the next iteration
         }
       }
   }
