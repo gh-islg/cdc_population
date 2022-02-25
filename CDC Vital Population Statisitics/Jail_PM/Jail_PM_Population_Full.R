@@ -341,9 +341,15 @@ quarter_df <- rbind(quarter_df, cdc_pop_long_prop_gen) # rbind quarter_df and cd
 add_bookings_rates_all_pop <- function(df) {
   final_df <- df # initialize final_df
   race_ethn_list <- c("AIAN", "all_race_ethn", "API", "B", "L", "POC", "W")
+  pop_cat_list <-  c("all_pop", "leg_stat_booking", "leg_stat_booking", "leg_stat_snap", "severity")
   for (current_site in unique(df$site)) {
-    for (current_quarter in unique(df$sjc_quarter))
-      for (race in race_ethn_list) {
+    for (current_quarter in unique(df$sjc_quarter)) {
+      for (race in race_ethn_list){
+        
+      }
+        for (pop in pop_cat_list) 
+          if (pop == "all_pop")
+          {
         # We are just going to calculate for all_pop in this loop
         current_df <- filter(df, site == current_site, sjc_quarter == current_quarter, 
                                  race_ethn == race, pop_cat == "all_pop", measure == "bookings")
@@ -397,9 +403,10 @@ add_bookings_rates_all_pop <- function(df) {
           colnames(new_df_RRI) <- colnames(current_df)
                 
           final_df <- rbind(final_df, new_df, new_df_RRI) # add new row before going to the next iteration
-          print("\n")
+        }
       }
     }
+      
   }
   return(final_df)
 }
@@ -626,12 +633,13 @@ add_ALOS_rel_all_pop <- function(df) {
   
 quarter_df <- add_ALOS_rel_all_pop(quarter_df)
 
-add_ALOS_conf_all_pop <- function(df) {
+add_ALOS_conf <- function(df) {
   final_df <- df # initialize final_df
   race_ethn_list <- c("AIAN", "all_race_ethn", "API", "B", "L", "POC", "W")
   for (current_site in unique(df$site)) {
     for (current_quarter in unique(df$sjc_quarter))
       for (race in race_ethn_list) {
+        for(pop in pop_cat_list)
         # We are just going to calculate for all_pop in this loop
         # get current year  
         
@@ -674,20 +682,9 @@ add_ALOS_conf_all_pop <- function(df) {
           
           
           colnames(new_df_ALOS_conf_disprop_ratio) <- colnames(current_df_ALOS_conf)# get column names from current_df
-    
-          tryCatch( {
             
-            final_df <- rbind(final_df, new_df_ALOS_conf_disprop_ratio) # add new row before going to the next iteration
-          
-            },
-            error = function(e) {
-              cat("Adding", current_site, current_quarter, race, "COULD NOT BE ADDED", " ")
-              print(paste("MY ERROR: ", e))
-            },
-            finally = function(f) {
-              next
-            }
-          )
+          final_df <- rbind(final_df, new_df_ALOS_conf_disprop_ratio) # add new row before going to the next iteration
+        
           
         }
       }
@@ -695,7 +692,7 @@ add_ALOS_conf_all_pop <- function(df) {
   return(final_df)  
 }
 
-quarter_df <- add_ALOS_conf_all_pop(quarter_df)
+quarter_df <- add_ALOS_conf(quarter_df)
 
 
 write.csv(quarter_df, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/jail_pm_quarter_df.csv",
