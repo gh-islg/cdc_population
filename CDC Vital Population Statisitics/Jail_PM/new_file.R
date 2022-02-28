@@ -9,8 +9,9 @@
 
 ######### Change log #############
 # 1. Have to separate ADP_snapshots and ADP_admrel for aggregation
-
-
+# 2. Add aggregated calc_n in all dataframes. 
+# 3. Take all population and white population out of loop in ALOS Disparity Measure calculations
+# 4.
 
 # import libraries
 library("plyr")
@@ -23,6 +24,13 @@ jail_pm_full <- read.csv("C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vi
 
 jail_pm_full <- jail_pm_full[!is.na(jail_pm_full$sjc_quarter), ] # Drop rows where sjc_quarter is null
 
+###### Take out quarters after April 2021 ######
+jail_pm_full_cohorts1and2 <- filter(jail_pm_full, cohort %in% c(1, 2), sjc_quarter <= 20)
+jail_pm_full_cohort3 <- filter(jail_pm_full, cohort == 3, sjc_quarter <= 12)
+
+jail_pm_full <- rbind(jail_pm_full_cohorts1and2, jail_pm_full_cohort3) # rind cohorts back together
+
+# delete any quarters before April 2021 
 jail_pm_full[jail_pm_full$pop_cat == "all_pop" & is.na(jail_pm_full$sub_pop), "sub_pop"] <- "all_pop_sub"
 
 # split values that need to be averaged versus summed
@@ -33,7 +41,7 @@ jail_pm_avg_full <- filter(jail_pm_full, measure %in% avg_measures) # filter ave
 jail_pm_sum_full <- filter(jail_pm_full, measure == sum_measures) # filter sum measures
 
 
-avg_df_agg <- aggregate(jail_pm_avg_full[, 11:12], by = list(jail_pm_avg_full$site, 
+avg_df_agg <- aggregate(jail_pm_avg_full[, "value"], by = list(jail_pm_avg_full$site, 
                                                              jail_pm_avg_full$sjc_quarter,
                                                              jail_pm_avg_full$race_ethn,
                                                              jail_pm_avg_full$pop_cat,
@@ -41,7 +49,7 @@ avg_df_agg <- aggregate(jail_pm_avg_full[, 11:12], by = list(jail_pm_avg_full$si
                                                              jail_pm_avg_full$measure),
                                                              FUN = mean)
 
-sum_df_agg <- aggregate(jail_pm_sum_full[, 11:12], by = list(jail_pm_sum_full$site, 
+sum_df_agg <- aggregate(jail_pm_sum_full[, c("value", "calc_n")], by = list(jail_pm_sum_full$site, 
                                                              jail_pm_sum_full$sjc_quarter,
                                                              jail_pm_sum_full$race_ethn,
                                                              jail_pm_sum_full$pop_cat,
@@ -50,12 +58,38 @@ sum_df_agg <- aggregate(jail_pm_sum_full[, 11:12], by = list(jail_pm_sum_full$si
                                                              FUN = sum)
 
 colnames(avg_df_agg) <- c("site", "quarter", "race_ethn", "pop_cat", "sub_pop", 
-                          "measure", "value", "calc_n")
+                          "measure", "value")
 
 colnames(sum_df_agg) <- c("site", "quarter", "race_ethn", "pop_cat", "sub_pop", 
                           "measure", "value", "calc_n")
 
-quarter_df <- rbind(avg_df_agg, sum_df_agg)
+############# Add calc_n back to avg data frame (calc_n variable needs to be summed) ############
+avg_df_agg_calc_n <- aggregate(jail_pm_avg_full[, "calc_n"], by = list(jail_pm_avg_full$site, 
+                                                               jail_pm_avg_full$sjc_quarter,
+                                                               jail_pm_avg_full$race_ethn,
+                                                               jail_pm_avg_full$pop_cat,
+                                                               jail_pm_avg_full$sub_pop,
+                                                               jail_pm_avg_full$measure),
+                                                               FUN = sum)
+
+colnames(avg_df_agg_calc_n) <- c("site", "quarter", "race_ethn", "pop_cat", "sub_pop", 
+                          "measure", "calc_n")
+
+# make a new variables to join avg and avg_calc datasets
+
+avg_df_agg$join_var <- paste(avg_df_agg$site, avg_df_agg$quarter, avg_df_agg$race_ethn, 
+                             avg_df_agg$pop_cat, avg_df_agg$sub_pop, avg_df_agg$measure, sep = "_")
+avg_df_agg_calc_n$join_var <- paste(avg_df_agg_calc_n$site, avg_df_agg_calc_n$quarter, avg_df_agg_calc_n$race_ethn, 
+                                    avg_df_agg_calc_n$pop_cat, avg_df_agg_calc_n$sub_pop, avg_df_agg_calc_n$measure, sep = "_")
+
+# use left join to join calc_n column to avg dataset
+avg_df_agg <- left_join(avg_df_agg, avg_df_agg_calc_n[, c("join_var", "calc_n")], 
+                        by = "join_var")
+
+avg_df_agg <- select(avg_df_agg, -join_var) # delete extra column in avg dataset
+
+
+quarter_df <- rbind(avg_df_agg, sum_df_agg) # rbind avg and sum datasets together
 
 quarter_df <- add_column(quarter_df, year = NA, .before = "quarter") # make sjc_year variable
 quarter_df <- add_column(quarter_df, quarter_range = NA, .after = "quarter") # make quarter variable
@@ -84,17 +118,14 @@ month_to_quarter_dict_cohort_1_and_2 <- c("Baseline"=0, "May 16 - Jul 16"=1, "Au
                                           "May 18 - Jul 18"=9, "Aug 18 - Oct 18"=10, "Nov 18 - Jan 19"=11,
                                           "Feb 19 - Apr 19"=12, "May 19 - Jul 19"=13, "Aug 19 - Oct 19"=14,
                                           "Nov 19 - Jan 20"=15, "Feb 20 - Apr 20"=16, "May 20 - Jul 20"=17,
-                                          "Aug 20 - Oct 20"=18, "Nov 20 - Jan 21"=19, "Feb 21 - Apr 21"=20,
-                                          "May 21 - Jul 21"=21, "Aug 21 - Oct 21"=22, "Nov 21 - Jan 22"=23,
-                                          "Feb 22 - Apr 22"=24)
+                                          "Aug 20 - Oct 20"=18, "Nov 20 - Jan 21"=19, "Feb 21 - Apr 21"=20)
 
 
 month_to_quarter_dict_cohort_3 <- c("Baseline"=0, "May 18 - Jul 18"=1, "Aug 18 - Oct 18"=2,
                                     "Nov 18 - Jan 19"=3, "Feb 19 - Apr 19"=4, "May 19 - Jul 19"=5,
                                     "Aug 19 - Oct 19"=6, "Nov 19 - Jan 20"=7, "Feb 20 - Apr 20"=8,
                                     "May 20 - Jul 20"=9, "Aug 20 - Oct 20"=10, "Nov 20 - Jan 21"=11,
-                                    "Feb 21 - Apr 21"=12, "May 21 - Jul 21"=13, "Aug 21 - Oct 21"=14,
-                                    "Nov 21 - Jan 22"=15)
+                                    "Feb 21 - Apr 21"=12)
 
 # Use a for loop to populate quarter variable
 for (i in seq(1, length(month_to_quarter_dict_cohort_1_and_2))) {
@@ -554,7 +585,7 @@ quarter_df <- add_prop_and_inc_rate_ADP_snapshots(quarter_df)
 
 add_ALOS_rel <- function(df) {
   final_df <- df # initialize final_df
-  race_ethn_list <- c("AIAN", "API", "B", "L", "POC", "W")
+  race_ethn_list <- c("AIAN", "API", "B", "L", "POC")
   pop_cat_list <-  c("all_pop", "leg_stat_booking", "severity")
   leg_stat_sub <- c("awaiting_action", "pretrial", "pretrial_awaitingaction", "sentenced", "violation")
   severity_sub <- c("fel", "misd")
@@ -628,7 +659,7 @@ quarter_df <- add_ALOS_rel(quarter_df)
 
 add_ALOS_conf <- function(df) {
   final_df <- df # initialize final_df
-  race_ethn_list <- c("AIAN", "API", "B", "L", "POC", "W")
+  race_ethn_list <- c("AIAN", "API", "B", "L", "POC")
   pop_cat_list <-  c("all_pop", "leg_stat_snap", "severity")
   leg_stat_sub <- c("awaiting_action", "pretrial", "pretrial_awaitingaction", "sentenced", "violation")
   severity_sub <- c("fel", "misd")
