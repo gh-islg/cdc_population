@@ -397,10 +397,11 @@ add_prop_and_inc_rate_ADP_snapshots <- function(df) {
   severity_sub <- c("fel", "misd")
   ADP_df <- filter(df, measure == "ADP_snapshot")
   sites <- unique(ADP_df$site)
+  ADP_year_month <- unique(ADP_df$year_month)
   
   
   for (current_site in sites) {
-    for (current_year_month in unique(ADP_df$year_month)) {
+    for (current_year_month in ADP_year_month) {
       for (race in race_ethn_list) {
         for (pop in pop_cat_list) {
           if (pop == "all_pop") {
@@ -419,7 +420,7 @@ add_prop_and_inc_rate_ADP_snapshots <- function(df) {
             current_df_ADP_snapshot <- filter(df, site == current_site, year_month == current_year_month,
                                               race_ethn == race, pop_cat == pop, sub_pop == sub,
                                               measure == "ADP_snapshot")
-            total_df_ADP_snapshot <- filter(df, site == current_site, quarter == current_quarter, 
+            total_df_ADP_snapshot <- filter(df, site == current_site, year_month == current_year_month, 
                                             race_ethn == "all_race_ethn", pop_cat == pop, sub_pop == sub,
                                             measure == "ADP_snapshot")
             
@@ -430,7 +431,7 @@ add_prop_and_inc_rate_ADP_snapshots <- function(df) {
             else { # if the data frame has rows proceed to the calculation
               # get population for site and year
               current_year <- unique(current_df_ADP_snapshot$year)
-              cat("ADP Snapshots", current_site, current_year, current_year_month, race, pop, sub, "\n", " ")
+              cat("ADP Snapshots", current_site, current_year_month, race, pop, sub, "\n", " ")
               current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
               
               if (current_year >= 2020) { # We only have populations from 2015 - 2020
@@ -538,11 +539,6 @@ add_ALOS_rel <- function(df) {
               # get population for site and year
               current_year <- unique(current_df_ALOS_rel$year)
               cat("ALOS rel", current_site, current_year_month, race, current_year, pop, sub, "\n", " ")
-              current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
-              
-              if (current_year >= 2020) { # We only have populations from 2015 - 2020
-                current_year_in_loop <- 2020
-              }
               
               race_ALOS_rel <- current_df_ALOS_rel[, "value"] # get population
               white_ALOS_rel <- white_df_ALOS_rel[, "value"] # get total ALOS_rel
@@ -574,6 +570,82 @@ add_ALOS_rel <- function(df) {
 }
 
 jail_pm_full <- add_ALOS_rel(jail_pm_full)
+
+
+add_ALOS_conf <- function(df) {
+  final_df <- df # initialize final_df
+  race_ethn_list <- c("AIAN", "API", "B", "L", "POC")
+  pop_cat_list <-  c("all_pop", "leg_stat_snap", "severity")
+  leg_stat_sub <- c("awaiting_action", "pretrial", "pretrial_awaitingaction", "sentenced", "violation")
+  severity_sub <- c("fel", "misd")
+  ALOS_df <- filter(df, measure == "ALOS_conf")
+  sites <- unique(ALOS_df$site)
+  ADP_year_month <- unique(ALOS_df$year_month)
+  
+  for (current_site in sites) {
+    for (current_year_month in ADP_year_month) {
+      for (race in race_ethn_list) {
+        for (pop in pop_cat_list) {
+          if (pop == "all_pop") {
+            sub_pop_list <- "all_pop_sub"
+          }
+          else if (pop == "leg_stat_snap") {
+            sub_pop_list <- leg_stat_sub
+          }
+          else { # This means that pop_cat == severity
+            sub_pop_list <- severity_sub
+          }
+          for (sub in sub_pop_list) {
+            # We are just going to calculate for all_pop in this loop
+            # get current year  
+            
+            # ALOS_rel
+            current_df_ALOS_conf <- filter(df, site == current_site, year_month == current_year_month,
+                                          race_ethn == race, pop_cat == pop, sub_pop == sub)
+            white_df_ALOS_conf <- filter(ALOS_df, site == current_site, year_month == current_year_month,
+                                        race_ethn == "W", pop_cat == pop, sub_pop == sub)
+            
+            if (dim(current_df_ALOS_conf)[1] == 0 | dim(white_df_ALOS_conf)[1] == 0) {
+              next # if data.frame is empty move to the next iteration
+            }
+            
+            else { # if the data frame has rows proceed to the calculation
+              # get population for site and year
+              
+              cat("ALOS conf", current_site, current_year_month, race, pop, sub, "\n", " ")
+              
+              race_ALOS_conf <- current_df_ALOS_conf[, "value"] # get population
+              white_ALOS_conf <- white_df_ALOS_conf[, "value"] # get total ALOS_rel
+              
+              ALOS_conf_disparity_ratio <- round(race_ALOS_conf / white_ALOS_conf, 3)
+              
+              current_year <- unique(current_df_ALOS_conf$year)
+              current_cohort <- unique(current_df_ALOS_conf$cohort) # get cohort from filtered df
+              current_sjc_year <- unique(current_df_ALOS_conf$sjc_year) # get sjc_year from filtered df
+              current_year <- unique(current_df_ALOS_conf$year) # get current year
+              current_sjc_quarter <- unique(current_df_ALOS_conf$sjc_quarter) # get current quarter
+              current_month <- unique(current_df_ALOS_conf$month) # get current month
+              
+              
+              new_df_ALOS_conf_disparity_ratio <- data.frame(current_site, current_year, current_month, current_cohort,
+                                                            current_sjc_year, current_sjc_quarter, race, pop, sub,
+                                                            "ALOS_conf_disparity_ratio", ALOS_conf_disparity_ratio, NA,
+                                                            current_year_month)
+              
+              colnames(new_df_ALOS_conf_disparity_ratio) <- colnames(df) # get column names from current_df
+              
+              final_df <- rbind(final_df, new_df_ALOS_conf_disparity_ratio) # add new row before going to the next iteration            
+            }
+          }
+        }
+      }
+    }
+  }
+  return(final_df)
+}
+
+jail_pm_full <- add_ALOS_conf(jail_pm_full)
+
 
 # split values that need to be averaged versus summed
 avg_measures <- c("ADP_admrel", "ALOS_rel", "ADP_snapshot", "ALOS_conf")
@@ -719,79 +791,7 @@ quarter_df[quarter_df$sjc_cohort == "3" & quarter_df$sjc_year == "baseline" , "y
 quarter_df$year <- as.integer(quarter_df$year)
 
 
-add_ALOS_conf <- function(df) {
-  final_df <- df # initialize final_df
-  race_ethn_list <- c("AIAN", "API", "B", "L", "POC")
-  pop_cat_list <-  c("all_pop", "leg_stat_snap", "severity")
-  leg_stat_sub <- c("awaiting_action", "pretrial", "pretrial_awaitingaction", "sentenced", "violation")
-  severity_sub <- c("fel", "misd")
-  ALOS_df <- filter(df, measure == "ALOS_conf")
-  for (current_site in unique(ALOS_df$site)) {
-    for (current_quarter in unique(ALOS_df$quarter)) {
-      for (race in race_ethn_list) {
-        for (pop in pop_cat_list) {
-          if (pop == "all_pop") {
-            sub_pop_list <- "all_pop_sub"
-          }
-          else if (pop == "leg_stat_snap") {
-            sub_pop_list <- leg_stat_sub
-          }
-          else { # This means that pop_cat == severity
-            sub_pop_list <- severity_sub
-          }
-          for (sub in sub_pop_list) {
-            # We are just going to calculate for all_pop in this loop
-            # get current year  
-            
-            # ALOS_rel
-            current_df_ALOS_conf <- filter(ALOS_df, site == current_site, quarter == current_quarter, 
-                                          race_ethn == race, pop_cat == pop, sub_pop == sub)
-            white_df_ALOS_conf <- filter(ALOS_df, site == current_site, quarter == current_quarter, 
-                                        race_ethn == "W", pop_cat == pop, sub_pop == sub)
-            
-            if (dim(current_df_ALOS_conf)[1] == 0 | dim(white_df_ALOS_conf)[1] == 0) {
-              next # if data.frame is empty move to the next iteration
-            }
-            
-            else { # if the data frame has rows proceed to the calculation
-              # get population for site and year
-              current_year <- unique(current_df_ALOS_conf$year)
-              cat("ALOS conf", current_site, current_quarter, race, current_year, pop, sub, "\n", " ")
-              current_year_in_loop <- current_year # initialize to year in loop...might need to be changed within the loop
-              
-              if (current_year >= 2020) { # We only have populations from 2015 - 2020
-                current_year_in_loop <- 2020
-              }
-              
-              race_ALOS_conf <- current_df_ALOS_conf[, "value"] # get population
-              white_ALOS_conf <- white_df_ALOS_conf[, "value"] # get total ALOS_rel
-              
-              ALOS_conf_disparity_ratio <- round(race_ALOS_conf / white_ALOS_conf, 3)
-              
-              current_cohort <- unique(current_df_ALOS_conf$sjc_cohort) # get cohort from filtered df
-              current_sjc_year <- unique(current_df_ALOS_conf$sjc_year) # get sjc_year from filtered df
-              current_quarter_long <- unique(current_df_ALOS_conf$quarter_range) # get current quarter
-              
-              
-              new_df_ALOS_conf_disparity_ratio <- data.frame(current_site, current_year, current_quarter, current_quarter_long,
-                                                            current_cohort, current_sjc_year,  
-                                                            race, NA, pop, sub,
-                                                            "ALOS_conf_disparity_ratio", ALOS_conf_disparity_ratio, NA)
-              
-              
-              colnames(new_df_ALOS_conf_disparity_ratio) <- colnames(df) # get column names from current_df
-              
-              final_df <- rbind(final_df, new_df_ALOS_conf_disparity_ratio) # add new row before going to the next iteration            
-            }
-          }
-        }
-      }
-    }
-  }
-  return(final_df)
-}
 
-quarter_df <- add_ALOS_conf(quarter_df)
 
 # Take out booking_rate_RRI for all race ethn and white popluations
 quarter_df <- quarter_df[!(quarter_df$race_ethn == "all_race_ethn" & quarter_df$measure == "booking_rate_RRI"), ]
