@@ -82,7 +82,7 @@ cdc_pop_long <- add_column(cdc_pop_long, sub_pop = NA, .after = "pop_cat")
 cohort_dict <- c("ALL"=3, "BUN"=3, "COO"=2,
                  "HAR"=1, "MIL"=1, "MUL"=2,
                  "NOR"=2, "PBC"=2, "PEN"=2,
-                 "PHI"=1, "PIM"=1)
+                 "PHI"=1, "PIM"=1, "CHA"=1)
 
 for (i in seq(length(cohort_dict))) {
   insert_rows <- cdc_pop_long$site == names(cohort_dict[i])
@@ -497,7 +497,6 @@ add_prop_and_inc_rate_ADP_snapshots <- function(df) {
 
 jail_pm_full <- add_prop_and_inc_rate_ADP_snapshots(jail_pm_full)
 
-
 add_ALOS_rel <- function(df) {
   final_df <- df # initialize final_df
   race_ethn_list <- c("AIAN", "API", "B", "L", "POC")
@@ -505,7 +504,7 @@ add_ALOS_rel <- function(df) {
   leg_stat_sub <- c("awaiting_action", "pretrial", "pretrial_awaitingaction", "sentenced", "violation")
   severity_sub <- c("fel", "misd")
   ALOS_df <- filter(df, measure == "ALOS_rel")
-  sites <- unique(ALOS_df$sites)
+  sites <- unique(ALOS_df$site)
   ADP_year_month <- unique(ALOS_df$year_month)
   
   for (current_site in sites) {
@@ -527,9 +526,9 @@ add_ALOS_rel <- function(df) {
             
             # ALOS_rel
             current_df_ALOS_rel <- filter(df, site == current_site, year_month == current_year_month,
-                                          race_ethn == race, pop_cat == pop, sub_pop == sub, measure == "ALOS_rel")
+                                           race_ethn == race, pop_cat == pop, sub_pop == sub, measure == "ALOS_rel")
             white_df_ALOS_rel <- filter(df, site == current_site, year_month == current_year_month,
-                                        race_ethn == "W", pop_cat == pop, sub_pop == sub, measure == "ALOS_rel")
+                                         race_ethn == "W", pop_cat == pop, sub_pop == sub, measure == "ALOS_rel")
             
             if (dim(current_df_ALOS_rel)[1] == 0 | dim(white_df_ALOS_rel)[1] == 0) {
               next # if data.frame is empty move to the next iteration
@@ -537,8 +536,8 @@ add_ALOS_rel <- function(df) {
             
             else { # if the data frame has rows proceed to the calculation
               # get population for site and year
-              current_year <- unique(current_df_ALOS_rel$year)
-              cat("ALOS rel", current_site, current_year_month, race, current_year, pop, sub, "\n", " ")
+              
+              cat("ALOS rel", current_site, current_year_month, race, pop, sub, "\n", " ")
               
               race_ALOS_rel <- current_df_ALOS_rel[, "value"] # get population
               white_ALOS_rel <- white_df_ALOS_rel[, "value"] # get total ALOS_rel
@@ -547,16 +546,16 @@ add_ALOS_rel <- function(df) {
               
               current_cohort <- unique(current_df_ALOS_rel$cohort) # get cohort from filtered df
               current_sjc_year <- unique(current_df_ALOS_rel$sjc_year) # get sjc_year from filtered df
+              current_year <- unique(current_df_ALOS_rel$year) # get current year
               current_sjc_quarter <- unique(current_df_ALOS_rel$sjc_quarter) # get current quarter
               current_month <- unique(current_df_ALOS_rel$month) # get current month
-        
+              
               
               new_df_ALOS_rel_disparity_ratio <- data.frame(current_site, current_year, current_month, current_cohort,
-                                                            current_sjc_year, current_sjc_quarter, race, pop, sub,  
-                                                            "ALOS_rel_disparity_ratio", ALOS_rel_disparity_ratio, NA,
-                                                            current_year_month) # Make new dataframe with values in proper place
-
-            
+                                                             current_sjc_year, current_sjc_quarter, race, pop, sub,
+                                                             "ALOS_rel_disparity_ratio", ALOS_rel_disparity_ratio, NA,
+                                                             current_year_month)
+              
               colnames(new_df_ALOS_rel_disparity_ratio) <- colnames(df) # get column names from current_df
               
               final_df <- rbind(final_df, new_df_ALOS_rel_disparity_ratio) # add new row before going to the next iteration            
@@ -566,11 +565,10 @@ add_ALOS_rel <- function(df) {
       }
     }
   }
-  return(final_df) # return dataframe with newly added rows
+  return(final_df)
 }
 
 jail_pm_full <- add_ALOS_rel(jail_pm_full)
-
 
 add_ALOS_conf <- function(df) {
   final_df <- df # initialize final_df
@@ -646,9 +644,17 @@ add_ALOS_conf <- function(df) {
 
 jail_pm_full <- add_ALOS_conf(jail_pm_full)
 
+# separate population measures that do not have to be allocated
+
+jail_pm_pop <- filter(jail_pm_full, measure %in% c("gen_adult_pop", "prop_gen_adult_pop"))
+jail_pm_full <- jail_pm_full[!(jail_pm_full$measure == "gen_adult_pop" | jail_pm_full$measure == "prop_gen_adult_pop"), ]
+
 
 # split values that need to be averaged versus summed
-avg_measures <- c("ADP_admrel", "ALOS_rel", "ADP_snapshot", "ALOS_conf")
+avg_measures <- c("ADP_admrel", "ALOS_rel", "ADP_snapshot", "ALOS_conf", "booking_rate", "booking_rate_RRI", 
+                  "prop_of_subpop_ADP_admrel", "Inc_rate_ADP_admrel", "ADP_admrel_disprop_ratio", "prop_of_subpop_ADP_snapshot",
+                  "Inc_rate_ADP_snapshot", "ADP_snapshot_disprop_ratio", "ALOS_conf_disparity_ratio", "ALOS_rel_disparity_ratio")
+
 sum_measures <- "bookings"
 
 jail_pm_avg_full <- filter(jail_pm_full, measure %in% avg_measures) # filter average measures
@@ -696,9 +702,7 @@ avg_df_agg$join_var <- paste(avg_df_agg$site, avg_df_agg$quarter, avg_df_agg$rac
 avg_df_agg_calc_n$join_var <- paste(avg_df_agg_calc_n$site, avg_df_agg_calc_n$quarter, avg_df_agg_calc_n$race_ethn, 
                                     avg_df_agg_calc_n$pop_cat, avg_df_agg_calc_n$sub_pop, avg_df_agg_calc_n$measure, sep = "_")
 
-# use left join to join calc_n column to avg dataset
-avg_df_agg <- left_join(avg_df_agg, avg_df_agg_calc_n[, c("join_var", "calc_n")], 
-                        by = "join_var")
+
 
 avg_df_agg <- select(avg_df_agg, -join_var) # delete extra column in avg dataset
 
@@ -714,7 +718,7 @@ quarter_df <- add_column(quarter_df, race_ethn_drop = NA, .after = "race_ethn") 
 cohort_dict <- c("ALL"="3", "BUN"="3", "COO"="2",
                  "HAR"="1", "MIL"="1", "MUL"="2",
                  "NOR"="1", "PBC"="2", "PEN"="2",
-                 "PHI"="1", "PIM"="1")
+                 "PHI"="1", "PIM"="1", "CHA"="1")
 
 for (i in seq(length(cohort_dict))) {
   insert_rows <- quarter_df$site == names(cohort_dict[i])
@@ -758,12 +762,11 @@ sjc_quarter_sjc_year_dict_1and2 <- c("baseline"=0, "year 1"=1, "year 1"=2, "year
                                      "year 2"=5, "year 2"=6, "year 2"=7, "year 2"=8, "year 3"=9,   
                                      "year 3"=10, "year 3"=11, "year 3"=12, "year 4"=13, "year 4"=14,  
                                      "year 4"=15, "year 4"=16, "year 5"=17, "year 5"=18, "year 5"=19,  
-                                     "year 5"=20, "year 6"=21, "year 6"=22, "year 6"=23, "year 6"=24)
+                                     "year 5"=20)
 
 sjc_quarter_sjc_year_dict_3 <- c("baseline"=0, "year 1"=1, "year 1"=2, "year 1"=3, "year 1"=4,   
                                  "year 2"=5, "year 2"=6, "year 2"=7, "year 2"=8, "year 3"=9,   
-                                 "year 3"=10, "year 3"=11, "year 3"=12, "year 4"=13, "year 4"=14,  
-                                 "year 4"=15)
+                                 "year 3"=10, "year 3"=11, "year 3"=12)
 
 # Use a for loop to populate sjc_year variable
 for (i in seq(1, length(sjc_quarter_sjc_year_dict_1and2))) {
@@ -798,6 +801,18 @@ quarter_df <- quarter_df[!(quarter_df$race_ethn == "all_race_ethn" & quarter_df$
 quarter_df <- quarter_df[!(quarter_df$race_ethn == "W" & quarter_df$measure == "booking_rate_RRI"), ]
 
 
+# Reshape and add population measures to dataframe
+jail_pm_pop <- select(jail_pm_pop, -month, -sjc_year, -sjc_quarter, -year_month)
 
-write.csv(quarter_df, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/jail_pm_quarter_df_test_df.csv",
+colnames(jail_pm_pop) <- c("site", "year", "sjc_cohort", "race_ethn", "pop_cat",
+                           "sub_pop", "measure", "value", "calc_n")
+
+jail_pm_pop <- add_column(jail_pm_pop, quarter = NA, .after = "year")
+jail_pm_pop <- add_column(jail_pm_pop, quarter_range = NA, .after = "quarter")
+jail_pm_pop <- add_column(jail_pm_pop, sjc_year = NA, .after = "sjc_cohort")
+jail_pm_pop <- add_column(jail_pm_pop, race_ethn_drop = NA, .after = "race_ethn")
+
+quarter_df <- rbind(quarter_df, jail_pm_pop) # bind population measure to quarter_df
+
+write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/jail_pm_BLtoApr2021_allsites.csv",
           row.names = FALSE)
