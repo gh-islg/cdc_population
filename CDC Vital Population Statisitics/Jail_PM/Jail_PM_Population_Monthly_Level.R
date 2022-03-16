@@ -22,7 +22,7 @@ library("tidyr")
 library("tibble")
 library("stringr")
 
-jail_pm_full <- read.csv("C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/monthly_jail_measures_all_sites_BLtoY5 3.3.22.csv") # import Jail PM Dataset
+jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/monthly_jail_measures_all_sites_BLtoY5 3.3.22.csv") # import Jail PM Dataset
 
 jail_pm_full <- jail_pm_full[!is.na(jail_pm_full$sjc_quarter), ] # Drop rows where sjc_quarter is null
 jail_pm_full <- jail_pm_full[!is.na(jail_pm_full$year), ] # Drop rows where year is null
@@ -42,7 +42,7 @@ jail_pm_full[jail_pm_full$pop_cat == "all_pop" & is.na(jail_pm_full$sub_pop), "s
 #### Join Jail PM Data with most recent CDC Population Data ####
 # import CDC Data
 
-cdc_pop <- read.csv("C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/sjc_site_populations_jail_pm_2010_2020.csv")
+cdc_pop <- read.csv("C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Datasets/sjc_site_populations_jail_pm_2010_2020.csv")
 
 # Create site names dictionary to marry site names and with state and county codes
 jail_pm_names_dict <- c("Pennington"="PEN", "Pima"="PIM", 
@@ -174,7 +174,6 @@ jail_pm_full$calc_n <- as.integer(jail_pm_full$calc_n)
 jail_pm_full$year_month <- as.character(jail_pm_full$year_month)
 
 
-missing_calculations <- c()
 
 ######## Create loop to population measures at the monthly level ########
 
@@ -646,7 +645,8 @@ jail_pm_full <- add_ALOS_conf(jail_pm_full)
 
 # separate population measures that do not have to be allocated
 
-jail_pm_pop <- filter(jail_pm_full, measure %in% c("gen_adult_pop", "prop_gen_adult_pop"))
+jail_pm_pop <- cdc_pop_long
+
 jail_pm_full <- jail_pm_full[!(jail_pm_full$measure == "gen_adult_pop" | jail_pm_full$measure == "prop_gen_adult_pop"), ]
 
 
@@ -696,13 +696,12 @@ colnames(avg_df_agg_calc_n) <- c("site", "quarter", "race_ethn", "pop_cat", "sub
                           "measure", "calc_n")
 
 # make a new variables to join avg and avg_calc datasets
-
 avg_df_agg$join_var <- paste(avg_df_agg$site, avg_df_agg$quarter, avg_df_agg$race_ethn, 
                              avg_df_agg$pop_cat, avg_df_agg$sub_pop, avg_df_agg$measure, sep = "_")
 avg_df_agg_calc_n$join_var <- paste(avg_df_agg_calc_n$site, avg_df_agg_calc_n$quarter, avg_df_agg_calc_n$race_ethn, 
                                     avg_df_agg_calc_n$pop_cat, avg_df_agg_calc_n$sub_pop, avg_df_agg_calc_n$measure, sep = "_")
 
-
+avg_df_agg <- left_join(avg_df_agg, avg_df_agg_calc_n[, c("join_var", "calc_n")], by = "join_var")
 
 avg_df_agg <- select(avg_df_agg, -join_var) # delete extra column in avg dataset
 
@@ -814,5 +813,12 @@ jail_pm_pop <- add_column(jail_pm_pop, race_ethn_drop = NA, .after = "race_ethn"
 
 quarter_df <- rbind(quarter_df, jail_pm_pop) # bind population measure to quarter_df
 
-write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/jail_pm_BLtoApr2021_allsites.csv",
+
+
+quarter_df <- quarter_df %>%
+  mutate(value = ifelse(measure=="bookings" & quarter==0, value/2, value))
+
+write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/jail_pm_BLtoApr2021_allsites_new.csv",
           row.names = FALSE)
+
+

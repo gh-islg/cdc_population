@@ -1,5 +1,6 @@
+
 ################################################################################
-# Authors: Kailey Spencer
+# Authors: Kailey Spencer and Brian Holliday
 # Date: 3/1/2022
 # Last updated: 3/1/2022
 # Task: Create vetting template output for each site with jail PMs
@@ -11,7 +12,6 @@ library(dplyr)
 library(tidyr)
 library(lubridate)
 library(stringr)
-library(scales)
 library("xlsx")
 
 ################################################
@@ -19,94 +19,304 @@ library("xlsx")
 #IMPORTS
 
 jailpm <- read.csv("P4. Generated Output (Final Output)/jail_pm_BLtoApr2021_allsites.csv",
-                   stringsAsFactors=F)
+                   stringsAsFactors=F) %>% 
+  filter(!(sub_pop %in% c("awaiting_action", "not_freq_utl"))) %>% 
+  mutate(quar_num=paste(quarter, quarter_range),
+         value = round(value, digits=0),
+         sub_pop = recode(sub_pop, all_pop_sub = "n/a", freq_utl = "3+ admissions during SJC year",
+                          pretrial = "pretrial only", pretrial_awaitingaction="pretrial/awaiting action",
+                          sentenced = "sentenced only", violation = "violation only", misd = "misdemeanor",
+                          fel = "felony", "under 25" = "24 and under"),
+         race_ethn=recode(race_ethn, W = "White", POC = "People of color", B = "Black", L = "Latino", AIAN = "American Indian/Alaska Native",
+                          API = "Asian/Pacific Islander", O = "Other", all_race_ethn = "All race/ethnicities combined"),
+         pop_cat = recode(pop_cat, leg_stat_booking = "Legal status at admission",
+                          age = "Age", sex = "Sex", leg_stat_snap = "Legal status at snapshot",
+                          severity = "Severity of top charge", freq_utl = "Frequent utilizer")) %>%
+  group_by(site, measure, race_ethn, pop_cat, sub_pop) %>% 
+  mutate(small_n_baseline = ifelse((calc_n< 200 | is.na(calc_n)) & quarter==0, 1, NA)) %>% 
+  tidyr::fill(small_n_baseline, .direction="updown") %>% 
+  ungroup()
 
 ################################################
 
-#ADP - admissions/releases
 
-ADP_vet <- jailpm %>% 
-  mutate(quar_num=paste(quarter, quarter_range),
-         value = round(value, digits=0),
-         sub_pop = ifelse(sub_pop=="under 25", "24 and under", sub_pop)) %>% 
-  filter(measure=="ADP_admrel" & site=="PIM" & 
-           !(sub_pop %in% c("pretrial", "awaiting_action", "not_freq_utl"))) %>%
-  group_by(measure, race_ethn, pop_cat, sub_pop) %>% 
-  select(-calc_n, -quarter, -quarter_range, -year, -sjc_year, -sjc_cohort, -race_ethn_drop) %>%
-  pivot_wider(names_from = quar_num, values_from = value) %>% 
-  mutate_at(vars(starts_with(c("4", "8", "12", "16", "20"))), 
-            funs(pct_chg_bl=(.-`0 Baseline`)/`0 Baseline`)) %>% 
-  mutate_at(vars(ends_with("pct_chg_bl")), funs(ifelse(`0 Baseline`<20, NA, .))) %>% 
-  select(measure, site:sub_pop, order(as.numeric(str_sub(colnames(.), 1,2)))) %>% 
-  arrange(match(pop_cat, c("all_pop", "leg_stat_booking", "severity", "freq_utl",
-                           "age", "sex")), sub_pop,
-          match(race_ethn, c("all_race_ethn", "POC", "W", "AIAN", "API", "B", "L")))
-
-columns <- colnames(ADP_vet)
-ADP_vet <- data.frame(ADP_vet)
-
-colnames(ADP_vet) <- columns
-
-write.csv(ADP_vet, "P6. Vetting documents/sample_ADP_Pima.csv", row.names = F)
-
-write.xlsx(ADP_vet, file = "P6. Vetting documents/sample_ADP_Pima.xlsx",  sheetName = "Sheet1",
-           row.names = FALSE) # Export dataframe as a Excel Workbook
-
-
-# Import template shell
-
-
-ADP_workbook <- loadWorkbook("P6. Vetting documents/sample_ADP_Pima.xlsx")
-
-ADP_workbook_empty <- loadWorkbook("P6. Vetting documents/excel template for jail PM vetting empty.xlsx")
-
-sheets <- getSheets(ADP_workbook_empty) # get the sheet names of the ADP workbook
-
-
-# Define pct_chg columns
-percent_change_columns <- c("4 Feb 17 - Apr 17_pct_chg_bl", "8 Feb 18 - Apr 18_pct_chg_bl",
-                            "12 Feb 19 - Apr 19_pct_chg_bl", "16 Feb 20 - Apr 20_pct_chg_bl",
-                            "20 Feb 21 - Apr 21_pct_chg_bl")
-
-sheets <- getSheets(ADP_workbook) # get the sheet names of the ADP workbook
-ADP_sheet <- sheets[["sample_ADP_Pima"]] # get Sheet1 for adp
-
-# import dataframe into the empty excel sheet
-ADP_sheet <- addDataFrame(ADP_vet, ADP_sheet, col.names = TRUE, startRow = 3,
-                          start)
-
-
-for (pct_chg in percent_change_columns) {
+  measures <- c("ADP_admrel", "ADP_snapshot", "ALOS_rel", "ALOS_conf", "bookings") # Define the measures
   
-  colindex <- grep(pct_chg, colnames(ADP_vet))
+  sites <- c("COO", "HAR", "MIL", "MUL", "NOR", "PEN", "PBC", "CHA", "PHI",
+             "ALL", "BUN", "PIM") # Define the sites that we current have data for
   
-  cb_style <- CellStyle(ADP_workbook, dataFormat = DataFormat("0.00%"))  # Create cell style object for setColData
+ 
+  sites_dict <- c("PEN"="Pennington", "PIM"="Pima", 
+                  "CHA"="Charleston", "ALL"="Allegheny", "HAR"="Harris",
+                  "MUL"="Multnomah", "SPO"="Spokane", "NOR"="New Orleans",
+                  "BUN"="Buncombe", "COO"="Cook", "MIL"="Milwaukee",
+                  "PBC"="Palm Beach", "PHI"="Philadelphia") # define a dictionary for the workbook path
   
+get_site <- function(site_path) {
   
-  cell_block <- CellBlock(ADP_sheet, 2, colindex, dim(ADP_vet)[1], 1) # define a cell block for percent change
-  
-  pct_chg_column <- ADP_vet[, pct_chg]
-  
-  positive_index <- which(pct_chg_column >= 0.045)
-  negative_index <- which(pct_chg_column <= -0.045)
-  neutral_index <- which(pct_chg_column < 0.045 & pct_chg_column > -0.045)
-  null_index <- which(is.na(pct_chg_column))
-  
-  
-  fill_pos_chg <- Fill(foregroundColor = "red", backgroundColor = "red") # positive change in ADP will be red
-  fill_neg_chg <- Fill(foregroundColor = "green", backgroundColor = "green") # negative change in ADP will be red
-  fill_neutral_chg <- Fill(foregroundColor  = "yellow", backgroundColor = "yellow") # neutral change in ADP will be red
-  fill_null_chg <- Fill(foregroundColor = "lightblue", backgroundColor = "lightblue") # NA values in ADP will be turn blue
-
-  CB.setColData(cell_block, pct_chg_column, colIndex = 1, rowOffset = 0, showNA = FALSE,  colStyle = cb_style) # population pct_change cell block with pct_chg values
-  
-  # Fill pct_chg column with appropriate color scheme
-  CB.setFill(cell_block, fill_pos_chg, positive_index, 1)
-  CB.setFill(cell_block, fill_neg_chg, negative_index, 1)
-  CB.setFill(cell_block, fill_null_chg, null_index, 1)
-  CB.setFill(cell_block, fill_neutral_chg, neutral_index, 1)
-
+  return(sites_dict[site_path]) # get the current site names for the workbook path
   
 }
+        
+  
+addDataFrames_to_template_all_sites <- function(df) {
+  
+  for (current_site in sites) {      
+    
+    workbook_path <- paste("P6. Vetting documents/Empty Templates/", 
+                             get_site(current_site), " Vetting Template.xlsx", sep = "")
+      
+    ADP_workbook <- loadWorkbook(workbook_path)
+      
+    for (current_measure in measures)   {
+      
+      ADP_vet <- data.frame(df)
+      
+      ADP_vet <- ADP_vet %>% filter(measure == current_measure & site == current_site)
+      
+      "%!in%" <- Negate("%in%")
+      
+      if (0 %!in% unique(ADP_vet[, "quarter"])) {
+        next # if baseline quarter is not in the data frame skip in the loop
+      }
+      
+      if (dim(ADP_vet)[1] == 0) {
+        next # if the data frame is empty skip
+      }
+      
+      ADP_vet <- ADP_vet %>%
+        group_by(measure, race_ethn, pop_cat, sub_pop) %>% 
+        select(-calc_n, -quarter, -quarter_range, -year, -sjc_year, -sjc_cohort, -race_ethn_drop) %>%
+        pivot_wider(names_from = quar_num, values_from = value) %>% 
+        mutate_at(vars(starts_with(c("4", "8", "12", "16", "20"))), 
+                  funs(pct_chg_bl=(.-`0 Baseline`)/`0 Baseline`)) %>% 
+        mutate_at(vars(ends_with("pct_chg_bl")), funs(ifelse(!is.na(small_n_baseline), NA, .))) %>% 
+        select(measure, site:sub_pop, order(as.numeric(str_sub(colnames(.), 1,2))),  -small_n_baseline) %>% 
+        arrange(match(pop_cat, c("all_pop", "Legal status at admission", "Legal status at snapshot", 
+                                 "Severity of top charge", "Frequent utilizer", "Age", "Sex")), 
+                match(sub_pop, "pretrial/awaiting action"), sub_pop,
+                match(race_ethn, c("All race/ethnicities combined", "People of color", "White", 
+                                   "American Indian/Alaska Native", "Asian/Pacific Islander", "Black", 
+                                   "Latino"))) %>% 
+        mutate(pop_cat = ifelse(pop_cat=="all_pop", "Total ADP", pop_cat))
+      
+      columns <- colnames(ADP_vet) # get columns from dataframe
+      ADP_vet <- data.frame(ADP_vet) # make sure that dataset is a dataframe
+      colnames(ADP_vet) <- columns # assign column names
+      
+      
+      ADP_join_df <- select(ADP_vet, pop_cat, sub_pop, race_ethn, everything(), -measure, -site)
 
-saveWorkbook(ADP_workbook, file = "P6. Vetting documents/sample_ADP_Pima_auto_sample.xlsx")
+      sheets <- getSheets(ADP_workbook) # get the sheet names of the ADP workbook
+      
+      ADP_sheet <- sheets[[current_measure]] # get Sheet1 for adp
+      
+      addDataFrame(ADP_join_df, ADP_sheet, col.names = FALSE, row.names = FALSE,
+                   startRow = 3, startColumn = 1, showNA = TRUE)
+      
+      save_path <- paste("P6. Vetting documents/R-Updated/", 
+                         get_site(current_site), " Vetting Template Output.xlsx", sep = "") # Save dataframe
+      
+      saveWorkbook(ADP_workbook, file = save_path)
+      cat("\n", "Saved: ", current_site, current_measure, "\n", " ")
+    }
+  }
+}
+
+addDataFrames_to_template <- function(df, current_site) {
+  
+  workbook_path <- paste("P6. Vetting documents/Vetting Template Outputs/", 
+                         get_site(current_site), " Vetting Template.xlsx", sep = "")
+  
+  ADP_workbook <- loadWorkbook(workbook_path)
+  
+  for (current_measure in measures)   {
+    
+    ADP_vet <- data.frame(df)
+    
+    ADP_vet <- ADP_vet %>% filter(measure == current_measure & site == current_site)
+    
+    "%!in%" <- Negate("%in%")
+    
+    if (0 %!in% unique(ADP_vet[, "quarter"])) {
+      next # if baseline quarter is not in the data frame skip in the loop
+    }
+    
+    if (dim(ADP_vet)[1] == 0) {
+      next # if the data frame is empty skip
+    }
+    
+    ADP_vet <- ADP_vet %>%
+      group_by(measure, race_ethn, pop_cat, sub_pop) %>% 
+      select(-calc_n, -quarter, -quarter_range, -year, -sjc_year, -sjc_cohort, -race_ethn_drop) %>%
+      pivot_wider(names_from = quar_num, values_from = value) %>% 
+      mutate_at(vars(starts_with(c("4", "8", "12", "16", "20"))), 
+                funs(pct_chg_bl=(.-`0 Baseline`)/`0 Baseline`)) %>% 
+      mutate_at(vars(ends_with("pct_chg_bl")), funs(ifelse(!is.na(small_n_baseline), NA, .))) %>% 
+      select(measure, site:sub_pop, order(as.numeric(str_sub(colnames(.), 1,2))),  -small_n_baseline) %>% 
+      arrange(match(pop_cat, c("all_pop", "Legal status at admission", "Legal status at snapshot", 
+                               "Severity of top charge", "Frequent utilizer", "Age", "Sex")), 
+              match(sub_pop, "pretrial/awaiting action"), sub_pop,
+              match(race_ethn, c("All race/ethnicities combined", "People of color", "White", 
+                                 "American Indian/Alaska Native", "Asian/Pacific Islander", "Black", 
+                                 "Latino"))) %>% 
+      mutate(pop_cat = ifelse(pop_cat=="all_pop", "Total ADP", pop_cat))
+    
+    columns <- colnames(ADP_vet) # get columns from dataframe
+    ADP_vet <- data.frame(ADP_vet) # make sure that dataset is a dataframe
+    colnames(ADP_vet) <- columns # assign column names
+    
+    
+    ADP_join_df <- select(ADP_vet, pop_cat, sub_pop, race_ethn, everything(), -measure, -site)
+    
+    sheets <- getSheets(ADP_workbook) # get the sheet names of the ADP workbook
+    
+    ADP_sheet <- sheets[[current_measure]] # get Sheet1 for adp
+    
+    addDataFrame(ADP_join_df, ADP_sheet, col.names = FALSE, row.names = FALSE,
+                 startRow = 3, startColumn = 1, showNA = TRUE)
+    
+    save_path <- paste("P6. Vetting documents/Vetting Template Outputs/Outputs/Final/", 
+                       get_site(current_site), " Vetting Template Output.xlsx", sep = "") # Save dataframe
+    
+    saveWorkbook(ADP_workbook, file = save_path)
+    cat("\n", "Saved: ", current_site, current_measure, "\n", " ")
+  }
+}
+
+
+addDataFrames_to_template_all_sites(jailpm)
+
+# HARRIS IS A COHORT 3 SITE FOR THIS FUNCTION DUE TO AVAILABLE DATA
+cohorts_1and2 <- c("COO", "MIL", "MUL", "NOR", "PEN", "PIM", "PBC", "CHA", "PHI") # Define cohort 1 and 2 sites
+cohort3 <- c("ALL", "BUN") # Define cohort 3 sites
+ 
+
+format_pct_change <- function(current_site, df) {
+  
+  
+  if (current_site %in% cohorts_1and2) {
+    
+    percent_change_columns <- c("4 Feb 17 - Apr 17_pct_chg_bl", "8 Feb 18 - Apr 18_pct_chg_bl",
+                                "12 Feb 19 - Apr 19_pct_chg_bl", "16 Feb 20 - Apr 20_pct_chg_bl",
+                                "20 Feb 21 - Apr 21_pct_chg_bl")
+  }
+  
+  else if (current_site == "HAR") {
+    percent_change_columns <- c("4 Feb 17 - Apr 17_pct_chg_bl", "8 Feb 18 - Apr 18_pct_chg_bl",
+                                "12 Feb 19 - Apr 19_pct_chg_bl")
+  }
+  
+  else {
+    
+    percent_change_columns <- c("4 Feb 19 - Apr 19_pct_chg_bl", "8 Feb 20 - Apr 20_pct_chg_bl",
+                                "12 Feb 21 - Apr 21_pct_chg_bl")    
+  }
+  
+
+  for (current_measure in measures) {
+    
+    ADP_vet <- data.frame(df)
+    
+    ADP_vet <- ADP_vet %>% filter(measure == current_measure & site == current_site)
+  
+    "%!in%" <- Negate("%in%")
+  
+    if (0 %!in% unique(ADP_vet[, "quarter"])) {
+      next # if baseline quarter is not in the dataframe skip in the loop
+    }
+  
+    if (dim(ADP_vet)[1] == 0) {
+      next # if the data frame is empty skip
+    }
+    
+    ADP_vet <- ADP_vet %>%
+    group_by(measure, race_ethn, pop_cat, sub_pop) %>% 
+    select(-calc_n, -quarter, -quarter_range, -year, -sjc_year, -sjc_cohort, -race_ethn_drop) %>%
+    pivot_wider(names_from = quar_num, values_from = value) %>% 
+    mutate_at(vars(starts_with(c("4", "8", "12", "16", "20"))), 
+              funs(pct_chg_bl=(.-`0 Baseline`)/`0 Baseline`)) %>% 
+    mutate_at(vars(ends_with("pct_chg_bl")), funs(ifelse(!is.na(small_n_baseline), NA, .))) %>% 
+    select(measure, site:sub_pop, order(as.numeric(str_sub(colnames(.), 1,2))),  -small_n_baseline) %>% 
+    arrange(match(pop_cat, c("all_pop", "Legal status at admission", "Legal status at snapshot", 
+                             "Severity of top charge", "Frequent utilizer", "Age", "Sex")), 
+            match(sub_pop, "pretrial/awaiting action"), sub_pop,
+            match(race_ethn, c("All race/ethnicities combined", "People of color", "White", 
+                               "American Indian/Alaska Native", "Asian/Pacific Islander", "Black", 
+                               "Latino"))) %>% 
+    mutate(pop_cat = ifelse(pop_cat=="all_pop", "Total ADP", pop_cat))
+
+    columns <- colnames(ADP_vet) # get columns from dataframe
+    
+    ADP_vet <- data.frame(ADP_vet) # make sure that dataset is a dataframe
+    colnames(ADP_vet) <- columns # assign column name
+    
+    ADP_join_df <- select(ADP_vet, pop_cat, sub_pop, race_ethn, everything(), -measure, -site)  
+    
+    workbook_path <- paste("P6. Vetting documents/R-Updated/", 
+                         get_site(current_site), " Vetting Template Output.xlsx", sep = "") # get file paths
+  
+    ADP_workbook <- loadWorkbook(workbook_path) # open workbook  
+    
+    sheets <- getSheets(ADP_workbook) # get the sheet names of the ADP workbook
+    ADP_sheet <- sheets[[current_measure]] # get current sheet aligned with the measure      
+    
+    for (pct_chg in percent_change_columns) {
+    
+      pct_chg_column <- ADP_join_df[, pct_chg]
+  
+      positive_index <- which(pct_chg_column >= 0.045)
+      negative_index <- which(pct_chg_column <= -0.045)
+      neutral_index <- which(pct_chg_column < 0.045 & pct_chg_column > -0.045)
+      null_index <- which(is.na(pct_chg_column))
+  
+      fill_pos_chg <- Fill(foregroundColor = "firebrick1", backgroundColor = "firebrick1") # positive change in ADP will be red
+      fill_neg_chg <- Fill(foregroundColor = "darkolivegreen2", backgroundColor = "darkolivegreen2") # negative change in ADP will be red
+      fill_neutral_chg <- Fill(foregroundColor  = "gold1", backgroundColor = "gold1") # neutral change in ADP will be red
+      fill_null_chg <- Fill(foregroundColor = "grey90", backgroundColor = "grey90") # NA values in ADP will be turn blue
+      
+      colindex <- grep(pct_chg, colnames(ADP_join_df))
+      
+      cell_block <- CellBlock(ADP_sheet, 3, colindex, nrow(ADP_join_df), 1) # define a cell block for percent change
+  
+      cb_style <- CellStyle(ADP_workbook, dataFormat = DataFormat("0.00%"))  # Create cell style object for setColData
+  
+      CB.setColData(cell_block, pct_chg_column, colIndex = 1, rowOffset = 0, showNA = TRUE,  colStyle = cb_style) # population pct_change cell block with pct_chg values
+  
+      # Fill pct_chg column with appropriate color scheme
+      if (length(positive_index > 0)) {
+        CB.setFill(cell_block, fill_pos_chg, rowIndex = positive_index, colIndex = 1) # Fill positive index red
+      }
+      
+      if (length(negative_index > 0)) {
+        CB.setFill(cell_block, fill_neg_chg, rowIndex =  negative_index, colIndex = 1) # Fill negative index green
+      }
+      
+      if (length(null_index > 0)) {
+        CB.setFill(cell_block, fill_null_chg, rowIndex =  null_index, colIndex = 1) # Fill null index lightblue
+      }
+      
+      if (length(neutral_index) > 0) {
+        CB.setFill(cell_block, fill_neutral_chg, rowIndex =  neutral_index, colIndex = 1) # Fill neutral index yellow
+      }
+      
+      cat("\n", "Saved: ", current_measure, pct_chg, "\n", " ")  
+      
+      save_path <- paste("P6. Vetting documents/Vetting Template Outputs/R-Updated/", 
+                     get_site(current_site), " Vetting Template Output.xlsx", sep = "") # Save dataframe
+  
+      saveWorkbook(ADP_workbook, file = save_path)
+    } #pct_change loop
+  } 
+}
+
+format_pct_change("ALL", jailpm)
+format_pct_change("BUN", jailpm)
+format_pct_change("CHA", jailpm)
+format_pct_change("COO", jailpm)
+format_pct_change("HAR", jailpm)
+format_pct_change("MIL", jailpm)
+format_pct_change("MUL", jailpm)
+format_pct_change("NOR", jailpm)
+format_pct_change("PBC", jailpm)
+format_pct_change("PEN", jailpm)
