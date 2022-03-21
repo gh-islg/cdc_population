@@ -272,6 +272,8 @@ aggregate_and_pivot <- function(df, values_name) {
   
   # take fips_state_country_code and year out of columns only keep combined column for left join
   df <- select(df, fips_state_county_code_year, values_name)
+  
+  return(df)
 }
 
 
@@ -620,13 +622,13 @@ sjc_site_populations <- df_pop[-missing_site_rows, ]
 # export datasets as csv and excel using export from rio package
 
 # csv
-export(df_pop, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/cdc_populations_jail_pm_2010_2020.csv")
-export(sjc_site_populations, "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/sjc_site_populations_jail_pm_2010_2020.csv")
+export(df_pop, "C:/Users/Reagan/Documents/Jail PM Data/cdc_populations_jail_pm_2010_2020 v2.csv")
+export(sjc_site_populations, "C:/Users/Reagan/Documents/Jail PM Data/sjc_site_populations_jail_pm_2010_2020 v2.csv")
 
 # excel
-export(df_pop, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/cdc_populations_jail_pm_2010_2020.xlsx",
+export(df_pop, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/cdc_populations_jail_pm_2010_2020 v2.xlsx",
        overwrite = TRUE)
-export(sjc_site_populations, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/sjc_site_populations_jail_pm_2010_2020.xlsx",
+export(sjc_site_populations, file = "C:/Users/Reagan/Documents/GitHub/cdc_population/CDC Vital Population Statisitics/Jail_PM/Jail PM Data/sjc_site_populations_jail_pm_2010_2020 v2.xlsx",
        overwrite = TRUE)
 
 

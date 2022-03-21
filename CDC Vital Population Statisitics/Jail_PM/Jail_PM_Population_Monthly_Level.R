@@ -13,7 +13,7 @@
 # 3. Keep booking rate for total population
 # 4. Take out booking rate RRI for total population and white
 # 5. Calculate measures at the monthly level
-# 6. Import latest
+# 6. Change the 
 
 # import libraries
 library("plyr")
@@ -22,7 +22,10 @@ library("tidyr")
 library("tibble")
 library("stringr")
 
-jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/monthly_jail_measures_all_sites_BLtoY5 3.3.22.csv") # import Jail PM Dataset
+# jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/monthly_jail_measures_all_sites_BLtoY5 3.3.22.csv") # import Jail PM Dataset
+
+jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/Pennington.csv") # import Jail PM Dataset
+
 
 jail_pm_full <- jail_pm_full[!is.na(jail_pm_full$sjc_quarter), ] # Drop rows where sjc_quarter is null
 jail_pm_full <- jail_pm_full[!is.na(jail_pm_full$year), ] # Drop rows where year is null
@@ -312,8 +315,8 @@ add_prop_inc_rate_ADP_admrel <- function(df) { # add ADP admrel rates
                                             sub_pop == sub, measure == "ADP_admrel")
             total_df_ADP_admrel <- filter(df, site == current_site, 
                                           year_month == current_year_month, 
-                                          race_ethn == "all_race_ethn", pop_cat == pop, 
-                                          sub_pop == sub, measure == "ADP_admrel")
+                                          race_ethn == race, pop_cat == "all_pop", 
+                                          sub_pop == "all_pop_sub", measure == "ADP_admrel")
             
             if ((dim(current_df_ADP_admrel)[1] == 0) | dim(total_df_ADP_admrel)[1] == 0) {
               next # if data.frame is empty move to the next iteration
@@ -380,7 +383,6 @@ add_prop_inc_rate_ADP_admrel <- function(df) { # add ADP admrel rates
         }
       }
     }
-  
   } 
   return (final_df)
 }  
@@ -420,7 +422,7 @@ add_prop_and_inc_rate_ADP_snapshots <- function(df) {
                                               race_ethn == race, pop_cat == pop, sub_pop == sub,
                                               measure == "ADP_snapshot")
             total_df_ADP_snapshot <- filter(df, site == current_site, year_month == current_year_month, 
-                                            race_ethn == "all_race_ethn", pop_cat == pop, sub_pop == sub,
+                                            race_ethn == race, pop_cat == "all_pop", sub_pop == "all_pop_sub",
                                             measure == "ADP_snapshot")
             
             if (dim(current_df_ADP_snapshot)[1] == 0 | dim(total_df_ADP_snapshot)[1] == 0) {
@@ -598,9 +600,11 @@ add_ALOS_conf <- function(df) {
             
             # ALOS_rel
             current_df_ALOS_conf <- filter(df, site == current_site, year_month == current_year_month,
-                                          race_ethn == race, pop_cat == pop, sub_pop == sub)
-            white_df_ALOS_conf <- filter(ALOS_df, site == current_site, year_month == current_year_month,
-                                        race_ethn == "W", pop_cat == pop, sub_pop == sub)
+                                          race_ethn == race, pop_cat == pop, sub_pop == sub, 
+                                          measure == "ALOS_conf")
+            white_df_ALOS_conf <- filter(df, site == current_site, year_month == current_year_month,
+                                        race_ethn == "W", pop_cat == pop, sub_pop == sub,
+                                        measure == "ALOS_conf")
             
             if (dim(current_df_ALOS_conf)[1] == 0 | dim(white_df_ALOS_conf)[1] == 0) {
               next # if data.frame is empty move to the next iteration
@@ -801,7 +805,7 @@ quarter_df <- quarter_df[!(quarter_df$race_ethn == "W" & quarter_df$measure == "
 
 
 # Reshape and add population measures to dataframe
-jail_pm_pop <- select(jail_pm_pop, -month, -sjc_year, -sjc_quarter, -year_month)
+jail_pm_pop <- select(jail_pm_pop, -month, -sjc_year, -sjc_quarter)
 
 colnames(jail_pm_pop) <- c("site", "year", "sjc_cohort", "race_ethn", "pop_cat",
                            "sub_pop", "measure", "value", "calc_n")
@@ -818,7 +822,8 @@ quarter_df <- rbind(quarter_df, jail_pm_pop) # bind population measure to quarte
 quarter_df <- quarter_df %>%
   mutate(value = ifelse(measure=="bookings" & quarter==0, value/2, value))
 
-write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/jail_pm_BLtoApr2021_allsites_new.csv",
+write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/jail_pm_BLtoApr2021_allsites_new 3.17.22.csv",
           row.names = FALSE)
 
 
+.rs.restartR()
