@@ -22,9 +22,9 @@ library("tidyr")
 library("tibble")
 library("stringr")
 
-# jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/monthly_jail_measures_all_sites_BLtoY5 3.3.22.csv") # import Jail PM Dataset
+jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/monthly_jail_measures_all_sites_BLtoY5 3.21.22.csv") # import Jail PM Dataset
 
-jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/Pennington.csv") # import Jail PM Dataset
+#jail_pm_full <- read.csv("C:/Users/Reagan/Documents/Jail PM Data/mul_and_har.csv") # import Jail PM Dataset
 
 
 jail_pm_full <- jail_pm_full[!is.na(jail_pm_full$sjc_quarter), ] # Drop rows where sjc_quarter is null
@@ -315,8 +315,8 @@ add_prop_inc_rate_ADP_admrel <- function(df) { # add ADP admrel rates
                                             sub_pop == sub, measure == "ADP_admrel")
             total_df_ADP_admrel <- filter(df, site == current_site, 
                                           year_month == current_year_month, 
-                                          race_ethn == race, pop_cat == "all_pop", 
-                                          sub_pop == "all_pop_sub", measure == "ADP_admrel")
+                                          race_ethn == "all_race_ethn", pop_cat == pop, 
+                                          sub_pop == sub, measure == "ADP_admrel")
             
             if ((dim(current_df_ADP_admrel)[1] == 0) | dim(total_df_ADP_admrel)[1] == 0) {
               next # if data.frame is empty move to the next iteration
@@ -422,8 +422,9 @@ add_prop_and_inc_rate_ADP_snapshots <- function(df) {
                                               race_ethn == race, pop_cat == pop, sub_pop == sub,
                                               measure == "ADP_snapshot")
             total_df_ADP_snapshot <- filter(df, site == current_site, year_month == current_year_month, 
-                                            race_ethn == race, pop_cat == "all_pop", sub_pop == "all_pop_sub",
+                                            race_ethn == "all_race_ethn", pop_cat == pop, sub_pop == sub,
                                             measure == "ADP_snapshot")
+
             
             if (dim(current_df_ADP_snapshot)[1] == 0 | dim(total_df_ADP_snapshot)[1] == 0) {
               next # if data.frame is empty move to the next iteration
@@ -495,9 +496,6 @@ add_prop_and_inc_rate_ADP_snapshots <- function(df) {
   }
   return(final_df)
 }  
-
-jail_pm_full <- add_prop_and_inc_rate_ADP_snapshots(jail_pm_full)
-
 add_ALOS_rel <- function(df) {
   final_df <- df # initialize final_df
   race_ethn_list <- c("AIAN", "API", "B", "L", "POC")
@@ -646,6 +644,9 @@ add_ALOS_conf <- function(df) {
 }
 
 jail_pm_full <- add_ALOS_conf(jail_pm_full)
+
+jail_pm_full <- add_prop_and_inc_rate_ADP_snapshots(jail_pm_full)
+
 
 # separate population measures that do not have to be allocated
 
@@ -822,8 +823,10 @@ quarter_df <- rbind(quarter_df, jail_pm_pop) # bind population measure to quarte
 quarter_df <- quarter_df %>%
   mutate(value = ifelse(measure=="bookings" & quarter==0, value/2, value))
 
-write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/jail_pm_BLtoApr2021_allsites_new 3.17.22.csv",
+write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/jail_pm_BLtoApr2021_allsites_new v2 3.22.22.csv",
           row.names = FALSE)
 
+# write.csv(quarter_df, file = "C:/Users/Reagan/Documents/Jail PM Data/mul_and_har_quarterly.csv",
+#          row.names = FALSE)
 
 .rs.restartR()
